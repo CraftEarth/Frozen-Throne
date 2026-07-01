@@ -405,3 +405,193 @@ Current renderer still uses character-24 for testing.
 Before production, all renderer output must become realm-aware.
 
 ========================================================
+# FrozenThrone Development Bible
+
+Version: 1.0
+
+---
+
+# Purpose
+
+This document defines how FrozenThrone is engineered.
+
+The goal is consistency, stability, and maintainability.
+
+Every new feature should follow these standards.
+
+---
+
+# Project Philosophy
+
+Quality over speed.
+
+Never sacrifice stability for a shortcut.
+
+Always build reusable systems instead of one-off fixes.
+
+GitHub is the source of truth.
+
+---
+
+# Core Stack
+
+Game Server
+- TrinityCore 3.3.5a
+
+Website
+- Node.js
+
+Database
+- MySQL
+
+Frontend
+- HTML
+- CSS
+- JavaScript
+
+Version Control
+- Git
+- GitHub
+
+---
+
+# Folder Structure
+
+modules/
+    armory/
+    account/
+    guilds/
+    news/
+    vote/
+    shop/
+
+public/
+    css/
+    js/
+    images/
+    vendor/
+
+docs/
+    CHATGPT_PROJECT_CONTEXT.md
+    ROADMAP.md
+    BIBLE.md
+
+---
+
+# Coding Rules
+
+Never edit production blindly.
+
+Always:
+
+1. Backup
+2. Edit
+3. Syntax check
+4. Restart
+5. Test
+6. Commit
+7. Push
+
+---
+
+# Git Workflow
+
+git add .
+git commit -m "Describe feature"
+git push
+
+Every completed feature must be committed.
+
+---
+
+# Node Rules
+
+Never restart Node until syntax checks pass.
+
+Always run:
+
+node --check server.js
+
+before restarting.
+
+---
+
+# Armory Standards
+
+Character pages should feel like Blizzard quality.
+
+Goals:
+
+Fast
+
+Responsive
+
+Mobile friendly
+
+Minimal loading
+
+High quality rendering
+
+No stretched models
+
+Clear UI
+
+---
+
+# UI Standards
+
+Consistent spacing
+
+Square corners with subtle styling
+
+Dark FrozenThrone theme
+
+Readable fonts
+
+No clutter
+
+Professional appearance
+
+---
+
+# Performance
+
+Cache expensive operations.
+
+Avoid duplicate database queries.
+
+Keep pages under one second when possible.
+
+---
+
+# Security
+
+Hide GM accounts from public pages.
+
+Protect admin routes.
+
+Never expose passwords or secrets.
+
+Never commit tokens or credentials.
+
+---
+
+# Backups
+
+Every major feature:
+
+Git commit
+
+GitHub push
+
+Server backup
+
+No exceptions.
+
+---
+
+# Long-Term Goal
+
+Build the best Wrath of the Lich King private server website possible.
+
+Everything should feel polished, stable, and professionally engineered.
