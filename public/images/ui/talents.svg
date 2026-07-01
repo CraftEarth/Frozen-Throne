@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><filter id="g"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
+  <path d="M64 8 84 42 120 48 92 75 99 116 64 97 29 116 36 75 8 48 44 42Z" fill="#17324a" stroke="#73d6ff" stroke-width="5"/>
+  <path d="M64 24 77 48 104 53 83 73 88 101 64 88 40 101 45 73 24 53 51 48Z" fill="#57c8ff" opacity=".45" filter="url(#g)"/>
+  <path d="M64 28v62M34 57h60M45 82l39-39M84 82 45 43" stroke="#d9f8ff" stroke-width="5" stroke-linecap="round"/>
+</svg>

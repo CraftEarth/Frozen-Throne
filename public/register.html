@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create FrozenThrone Account</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="site-bg">
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/news.html">News</a>
+      <a href="/players.html">Players</a>
+      <a href="/features.html">Features</a>
+      <a href="/download.html">Download</a>
+      <a href="/register">Register</a>
+      <a href="/shop.html">Shop</a>
+    </nav>
+    <div class="nav-actions">
+      <span class="status-dot" id="realm-status-small">Realm</span>
+      <a class="btn" href="/register">Play Now</a>
+    </div>
+  </div>
+</header>
+<main class="container">
+  <section>
+    <div class="section-head"><h1>Create Account</h1><p>Register a FrozenThrone game account.</p></div>
+    <div class="card highlight form">
+      <form method="POST" action="/register">
+        <label for="username">Username</label>
+        <input id="username" name="username" placeholder="Username" required>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Password" required>
+        <label for="confirm_password">Confirm Password</label>
+        <input id="confirm_password" name="confirm_password" type="password" placeholder="Confirm Password">
+        <button class="btn" type="submit">Create Account</button>
+      </form>
+      <p class="muted">Use your account name, not your email, when logging into the 3.3.5a client.</p>
+    </div>
+  </section>
+</main>
+<footer class="footer">
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Blizzlike x1 Realm
+  <div class="footer-links">
+    <a href="/news.html">News</a>
+    <a href="/players.html">Players</a>
+    <a href="/download.html">Download</a>
+    <a href="/register">Create Account</a>
+  </div>
+</footer>
+</div>
+<script>
+fetch('/stats')
+  .then(res => res.json())
+  .then(data => {
+    const status = data.status || 'Online';
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', status);
+    set('status', status);
+    set('accounts', data.accounts ?? '0');
+    set('characters', data.characters ?? '0');
+    set('online', data.online ?? '0');
+  })
+  .catch(() => {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', 'Offline');
+    set('status', 'Offline');
+  });
+</script>
+</body>
+</html>

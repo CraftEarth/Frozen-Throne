@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrozenThrone Features</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="site-bg">
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/news.html">News</a>
+      <a href="/players.html">Players</a>
+      <a href="/features.html">Features</a>
+      <a href="/download.html">Download</a>
+      <a href="/register">Register</a>
+      <a href="/shop.html">Shop</a>
+    </nav>
+    <div class="nav-actions">
+      <span class="status-dot" id="realm-status-small">Realm</span>
+      <a class="btn" href="/register">Play Now</a>
+    </div>
+  </div>
+</header>
+<main class="container">
+  <section>
+    <div class="section-head"><h1>Server Features</h1><p>Wrath of the Lich King 3.3.5a, classic x1 progression, and room for custom FrozenThrone content.</p></div>
+    <div class="grid grid-3">
+      <div class="card"><h3>Wrath 3.3.5a</h3><p class="muted">Northrend, death knights, dungeons, raids, battlegrounds, and the classic Wrath experience.</p></div>
+      <div class="card"><h3>Blizzlike Progression</h3><p class="muted">x1 XP, x1 drops, x1 gold, x1 honor, and x1 reputation.</p></div>
+      <div class="card"><h3>Dungeons & Raids</h3><p class="muted">Built for a clean progression path from leveling to endgame.</p></div>
+      <div class="card"><h3>PvP Ready</h3><p class="muted">Honor and battleground progression are configured at x1.</p></div>
+      <div class="card"><h3>Player Rankings</h3><p class="muted">Rankings layout is ready for top level, gold, achievements, kills, and online activity.</p></div>
+      <div class="card"><h3>Future Custom Content</h3><p class="muted">Cosmetics, gold packs, events, vendors, and server tools can be added cleanly later.</p></div>
+    </div>
+  </section>
+</main>
+<footer class="footer">
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Blizzlike x1 Realm
+  <div class="footer-links">
+    <a href="/news.html">News</a>
+    <a href="/players.html">Players</a>
+    <a href="/download.html">Download</a>
+    <a href="/register">Create Account</a>
+  </div>
+</footer>
+</div>
+<script>
+fetch('/stats')
+  .then(res => res.json())
+  .then(data => {
+    const status = data.status || 'Online';
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', status);
+    set('status', status);
+    set('accounts', data.accounts ?? '0');
+    set('characters', data.characters ?? '0');
+    set('online', data.online ?? '0');
+  })
+  .catch(() => {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', 'Offline');
+    set('status', 'Offline');
+  });
+</script>
+</body>
+</html>

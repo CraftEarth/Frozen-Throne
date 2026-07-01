@@ -1,0 +1,22 @@
+Module Split Plan
+
+Step 1:
+Create modules/armory/routes.js.
+Do not remove existing server.js routes yet.
+
+Step 2:
+Move /armory route only.
+Restart and test:
+/armory
+/login
+/register
+
+Step 3:
+Move /armory/characters.
+Restart and test.
+
+Step 4:
+Move /armory/items, /armory/npcs, /armory/quests.
+
+Step 5:
+Move /armory/:realm/:guid last.

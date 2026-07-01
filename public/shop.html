@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrozenThrone Shop</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="site-bg">
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/news.html">News</a>
+      <a href="/players.html">Players</a>
+      <a href="/features.html">Features</a>
+      <a href="/download.html">Download</a>
+      <a href="/register">Register</a>
+      <a href="/shop.html">Shop</a>
+    </nav>
+    <div class="nav-actions">
+      <span class="status-dot" id="realm-status-small">Realm</span>
+      <a class="btn" href="/register">Play Now</a>
+    </div>
+  </div>
+</header>
+<main class="container">
+  <section>
+    <div class="section-head"><p class="eyebrow">Coming Soon</p><h1>FrozenThrone Shop</h1><p>Cosmetics and gold packs will be added later. This page is styled and ready for future shop logic.</p></div>
+    <div class="grid grid-4">
+      <div class="card"><h3>Mounts</h3><p class="muted">Cosmetic mounts and future reward options.</p><a class="btn secondary" href="#">Coming Soon</a></div>
+      <div class="card"><h3>Pets</h3><p class="muted">Companion pets and fun cosmetic extras.</p><a class="btn secondary" href="#">Coming Soon</a></div>
+      <div class="card"><h3>Cosmetics</h3><p class="muted">Visual items, vanity rewards, and appearance extras.</p><a class="btn secondary" href="#">Coming Soon</a></div>
+      <div class="card"><h3>Gold Packs</h3><p class="muted">Future support packs for players who want a boost.</p><a class="btn gold" href="#">Coming Soon</a></div>
+    </div>
+    <div class="card highlight" style="margin-top:18px;text-align:center"><h3>Shop is not live yet</h3><p class="muted">No purchases are active on this page right now. It is only a finished design placeholder until backend shop logic is added.</p></div>
+  </section>
+</main>
+<footer class="footer">
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Blizzlike x1 Realm
+  <div class="footer-links">
+    <a href="/news.html">News</a>
+    <a href="/players.html">Players</a>
+    <a href="/download.html">Download</a>
+    <a href="/register">Create Account</a>
+  </div>
+</footer>
+</div>
+<script>
+fetch('/stats')
+  .then(res => res.json())
+  .then(data => {
+    const status = data.status || 'Online';
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', status);
+    set('status', status);
+    set('accounts', data.accounts ?? '0');
+    set('characters', data.characters ?? '0');
+    set('online', data.online ?? '0');
+  })
+  .catch(() => {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', 'Offline');
+    set('status', 'Offline');
+  });
+</script>
+</body>
+</html>

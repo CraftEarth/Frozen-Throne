@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FrozenThrone Viewer Test</title>
+  <style>
+    body { margin:0; background:#020814; color:white; font-family:Arial; }
+    #model_3d { width:100vw; height:85vh; border:1px solid #246; }
+    #log { white-space:pre-wrap; padding:12px; color:#7ee6ff; }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://wow.zamimg.com/modelviewer/live/viewer/viewer.min.js"></script>
+</head>
+<body>
+<div id="model_3d"></div>
+<pre id="log">Loading viewer...</pre>
+
+<script type="module">
+  const log = (msg) => document.getElementById("log").textContent += "\n" + msg;
+
+  window.onerror = (msg, src, line, col, err) => {
+    log("WINDOW ERROR: " + msg + " at " + line + ":" + col);
+    if (err?.stack) log(err.stack);
+  };
+
+  try {
+    log("Importing viewer...");
+    const mod = await import("/vendor/wow-model-viewer/index.js");
+    log("Viewer imported.");
+
+    window.CONTENT_PATH = "/modelviewer/live/";
+    window.WOTLK_TO_RETAIL_DISPLAY_ID_API = "/wotlk-items";
+
+    const oldFetch = window.fetch;
+window.fetch = async (...args) => {
+  log("FETCH: " + args[0]);
+  return oldFetch(...args);
+};
+
+const character = await fetch("/renders/manifests/character-24-wowviewer.json").then(r => r.json());
+    log("Character loaded: " + JSON.stringify(character));
+
+    if (character.equipments) {
+  log("Mapping WotLK equipment...");
+  character.items = await mod.findItemsInEquipments(character.equipments);
+  log("Mapped items: " + JSON.stringify(character.items, null, 2));
+}
+
+const viewer = await mod.generateModels(1.25, "#model_3d", character, "live");
+    window.ftViewer = viewer;
+    log("Viewer loaded.");
+
+    if (character.items) {
+      log("Force applying items...");
+      for (const pair of character.items) {
+        log("Apply slot " + pair[0] + " display " + pair[1]);
+        viewer.updateItemViewer(pair[0], pair[1], 0);
+      }
+      log("Force apply complete.");
+    }
+  } catch (err) {
+    log("FAILED:");
+    log(err.stack || String(err));
+  }
+</script>
+</body>
+</html>

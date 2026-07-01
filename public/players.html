@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrozenThrone Players</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="site-bg">
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/news.html">News</a>
+      <a href="/players.html">Players</a>
+      <a href="/features.html">Features</a>
+      <a href="/download.html">Download</a>
+      <a href="/register">Register</a>
+      <a href="/shop.html">Shop</a>
+    </nav>
+    <div class="nav-actions">
+      <span class="status-dot" id="realm-status-small">Realm</span>
+      <a class="btn" href="/register">Play Now</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section>
+    <div class="section-head">
+      <h1>Player Rankings</h1>
+      <p>Live rankings pulled from the FrozenThrone TrinityCore database.</p>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Top Level Players</h3>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead><tr><th>Rank</th><th>Name</th><th>Level</th><th>Class</th></tr></thead>
+            <tbody id="topLevelBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Top Gold</h3>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead><tr><th>Rank</th><th>Name</th><th>Gold</th></tr></thead>
+            <tbody id="topGoldBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Top Achievement Points</h3>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead><tr><th>Rank</th><th>Name</th><th>Points</th></tr></thead>
+            <tbody id="topAchievementBody"><tr><td colspan="3">Coming next.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Top Honorable Kills</h3>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead><tr><th>Rank</th><th>Name</th><th>Kills</th></tr></thead>
+            <tbody id="topKillsBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card highlight">
+        <h3>Online Now</h3>
+        <div class="table-wrap">
+          <table class="rank-table">
+            <thead><tr><th>Name</th><th>Level</th><th>Status</th></tr></thead>
+            <tbody id="onlineNowBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card highlight">
+        <h3>Realm Totals</h3>
+        <div class="grid grid-3">
+          <div class="stat"><span>Accounts</span><strong id="accounts">0</strong></div>
+          <div class="stat"><span>Characters</span><strong id="characters">0</strong></div>
+          <div class="stat"><span>Online</span><strong id="online">0</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Blizzlike x1 Realm
+  <div class="footer-links">
+    <a href="/news.html">News</a>
+    <a href="/players.html">Players</a>
+    <a href="/download.html">Download</a>
+    <a href="/register">Create Account</a>
+  </div>
+</footer>
+</div>
+
+<script>
+function className(id) {
+  const classes = {
+    1: "Warrior",
+    2: "Paladin",
+    3: "Hunter",
+    4: "Rogue",
+    5: "Priest",
+    6: "Death Knight",
+    7: "Shaman",
+    8: "Mage",
+    9: "Warlock",
+    11: "Druid"
+  };
+  return classes[id] || "Unknown";
+}
+
+function copperToGold(copper) {
+  return Math.floor((Number(copper) || 0) / 10000).toLocaleString();
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function fill(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+fetch("/stats")
+  .then(res => res.json())
+  .then(data => {
+    setText("realm-status-small", data.status || "Online");
+    setText("accounts", data.accounts ?? "0");
+    setText("characters", data.characters ?? "0");
+    setText("online", data.online ?? "0");
+  })
+  .catch(() => {
+    setText("realm-status-small", "Offline");
+  });
+
+fetch("/api/players")
+  .then(res => res.json())
+  .then(data => {
+    fill("topLevelBody", data.topLevel.map((p, i) => `
+      <tr><td>${i + 1}</td><td>${p.name}</td><td>${p.level}</td><td>${className(p.class)}</td></tr>
+    `).join(""));
+
+    fill("topGoldBody", data.topGold.map((p, i) => `
+      <tr><td>${i + 1}</td><td>${p.name}</td><td>${copperToGold(p.money)}g</td></tr>
+    `).join(""));
+
+    fill("topKillsBody", data.topKills.map((p, i) => `
+      <tr><td>${i + 1}</td><td>${p.name}</td><td>${p.totalKills}</td></tr>
+    `).join(""));
+
+    fill("onlineNowBody", data.onlineNow.length ? data.onlineNow.map(p => `
+      <tr><td>${p.name}</td><td>${p.level}</td><td>Online now</td></tr>
+    `).join("") : '<tr><td colspan="3">No players online</td></tr>');
+  })
+  .catch(() => {
+    fill("topLevelBody", '<tr><td colspan="4">Could not load rankings.</td></tr>');
+    fill("topGoldBody", '<tr><td colspan="3">Could not load rankings.</td></tr>');
+    fill("topKillsBody", '<tr><td colspan="3">Could not load rankings.</td></tr>');
+    fill("onlineNowBody", '<tr><td colspan="3">Could not load online players.</td></tr>');
+  });
+</script>
+</body>
+</html>

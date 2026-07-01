@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrozenThrone News</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="site-bg">
+<header class="navbar">
+  <div class="nav-inner">
+    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/news.html">News</a>
+      <a href="/players.html">Players</a>
+      <a href="/features.html">Features</a>
+      <a href="/download.html">Download</a>
+      <a href="/register">Register</a>
+      <a href="/shop.html">Shop</a>
+    </nav>
+    <div class="nav-actions">
+      <span class="status-dot" id="realm-status-small">Realm</span>
+      <a class="btn" href="/register">Play Now</a>
+    </div>
+  </div>
+</header>
+<main class="container">
+  <section>
+    <div class="section-head"><h1>FrozenThrone News</h1><p>Updates from the FrozenThrone realm.</p></div>
+    <div class="grid grid-2">
+      <article class="card news-card"><img src="/images/frozenthrone-bg.jpeg" alt="FrozenThrone"><p class="meta">June 2026</p><h3>FrozenThrone Is Online</h3><p class="muted">The realm is live with account creation, client download info, and server status areas.</p><a class="btn secondary" href="/news/launch.html">Read More</a></article>
+      <article class="card"><p class="meta">Coming Soon</p><h3>First Server Events</h3><p class="muted">Events, community notices, and update notes can be posted here when ready.</p></article>
+    </div>
+  </section>
+</main>
+<footer class="footer">
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Blizzlike x1 Realm
+  <div class="footer-links">
+    <a href="/news.html">News</a>
+    <a href="/players.html">Players</a>
+    <a href="/download.html">Download</a>
+    <a href="/register">Create Account</a>
+  </div>
+</footer>
+</div>
+<script>
+fetch('/stats')
+  .then(res => res.json())
+  .then(data => {
+    const status = data.status || 'Online';
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', status);
+    set('status', status);
+    set('accounts', data.accounts ?? '0');
+    set('characters', data.characters ?? '0');
+    set('online', data.online ?? '0');
+  })
+  .catch(() => {
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('realm-status-small', 'Offline');
+    set('status', 'Offline');
+  });
+</script>
+</body>
+</html>

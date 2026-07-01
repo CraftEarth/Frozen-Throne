@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#04101f"/>
+  <circle cx="150" cy="150" r="135" fill="#0b2338" stroke="#7ee6ff" stroke-width="10"/>
+  <path d="M72 278c12-88 144-88 156 0z" fill="#111926"/>
+  <circle cx="150" cy="105" r="62" fill="#b8d7df"/>
+  <path d="M75 65c42-64 108-64 150 0-45-26-105-26-150 0z" fill="#eefcff"/>
+  <circle cx="126" cy="103" r="10" fill="#5ff0ff"/>
+  <circle cx="174" cy="103" r="10" fill="#5ff0ff"/>
+  <path d="M108 137c28 18 56 18 84 0" stroke="#243647" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <text x="150" y="250" font-size="30" text-anchor="middle" fill="#7ee6ff" font-family="Arial" font-weight="700">DK</text>
+</svg>

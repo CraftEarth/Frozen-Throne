@@ -1,0 +1,25 @@
+FrozenThrone Milestone
+
+First successful live 3D character render.
+
+Character:
+Randymarsh
+
+Viewer:
+wow-model-viewer
+
+Pipeline:
+
+TrinityCore
+→ Manifest
+→ Display IDs
+→ Viewer
+→ Interactive Character
+
+Status:
+
+SUCCESS
+
+Next objective:
+
+Perfect equipment mapping and replace Armory placeholder.
