@@ -1,3 +1,4 @@
+const enchantments = require("../../../public/data/spell-item-enchantments.json");
 function esc(v) {
   return String(v ?? "")
     .replaceAll("&", "&amp;")
@@ -20,8 +21,12 @@ function renderItem(item) {
     .map(socket => `<li class="v3-socket socket-${esc(socket.colorName.toLowerCase())}">${esc(socket.colorName)} Socket</li>`)
     .join("");
 
+  const socketBonusName = item.socketBonus && enchantments[item.socketBonus]
+    ? enchantments[item.socketBonus].name
+    : "";
+
   const socketBonus = item.socketBonus
-    ? `<li class="v3-socket-bonus">Socket Bonus ID: ${esc(item.socketBonus)}</li>`
+    ? `<li class="v3-socket-bonus">Socket Bonus: ${esc(socketBonusName || item.socketBonus)}</li>`
     : "";
 
   return `
