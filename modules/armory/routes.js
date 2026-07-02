@@ -1,3 +1,4 @@
+const { buildStats } = require("./engine/stats");
 module.exports = function registerArmoryRoutes(app, tools) {
   const {
     render,
@@ -555,12 +556,19 @@ app.get("/armory/:realm/:guid", async (req, res) => {
           <div class="ftcharv2-panel" id="tab-stats">
             <h3>Stats</h3>
             <div class="ftcharv2-statgrid">
-              <div><span>Health</span><strong>${esc(ch.health || 0)}</strong></div>
-              <div><span>Mana</span><strong>${esc(ch.power1 || 0)}</strong></div>
-              <div><span>Rage</span><strong>${esc(ch.power2 || 0)}</strong></div>
-              <div><span>Energy</span><strong>${esc(ch.power4 || 0)}</strong></div>
-              <div><span>Runic Power</span><strong>${esc(ch.power7 || 0)}</strong></div>
-              <div><span>XP</span><strong>${esc(ch.xp || 0)}</strong></div>
+              <div><span>Level</span><strong>${esc(buildStats(ch).level)}</strong></div>
+              <div><span>Health</span><strong>${esc(buildStats(ch).health)}</strong></div>
+              <div><span>Mana</span><strong>${esc(buildStats(ch).power.mana)}</strong></div>
+              <div><span>Rage</span><strong>${esc(buildStats(ch).power.rage)}</strong></div>
+              <div><span>Energy</span><strong>${esc(buildStats(ch).power.energy)}</strong></div>
+              <div><span>Runic Power</span><strong>${esc(buildStats(ch).power.runicPower)}</strong></div>
+              <div><span>XP</span><strong>${esc(buildStats(ch).xp)}</strong></div>
+              <div><span>Total Kills</span><strong>${esc(buildStats(ch).kills.total)}</strong></div>
+              <div><span>Today Kills</span><strong>${esc(buildStats(ch).kills.today)}</strong></div>
+              <div><span>Money</span><strong>${esc(buildStats(ch).money)}</strong></div>
+              <div><span>Map</span><strong>${esc(buildStats(ch).location.map)}</strong></div>
+              <div><span>Zone</span><strong>${esc(buildStats(ch).location.zone)}</strong></div>
+              <div><span>Online</span><strong>${buildStats(ch).online ? "Yes" : "No"}</strong></div>
             </div>
           </div>
 
