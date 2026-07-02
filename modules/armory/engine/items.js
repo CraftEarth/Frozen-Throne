@@ -45,6 +45,33 @@ const ITEM_STATS = {
   48: "Block Value"
 };
 
+
+function buildSockets(item = {}) {
+  const sockets = [];
+
+  for (let i = 1; i <= 3; i++) {
+    const color = Number(item[`socketColor_${i}`] || 0);
+    const content = Number(item[`socketContent_${i}`] || 0);
+
+    if (color || content) {
+      sockets.push({
+        slot: i,
+        color,
+        content,
+        colorName:
+          color === 1 ? "Meta" :
+          color === 2 ? "Red" :
+          color === 4 ? "Yellow" :
+          color === 8 ? "Blue" :
+          color === 14 ? "Prismatic" :
+          "Socket"
+      });
+    }
+  }
+
+  return sockets;
+}
+
 function buildItemStats(item = {}) {
   const stats = [];
 
@@ -125,7 +152,10 @@ function buildItem(item = {}) {
       max: Number(item.dmg_max1 || 0),
       speed: Number(item.delay || 0)
     },
-    stats: buildItemStats(item)
+    stats: buildItemStats(item),
+    sockets: buildSockets(item),
+    socketBonus: Number(item.socketBonus || 0),
+    iconDisplayId: Number(item.displayid || item.displayId || 0)
   };
 }
 
@@ -140,7 +170,9 @@ function buildInventory(items = []) {
 module.exports = {
   getQuality,
   getInventoryType,
+  buildSockets,
   buildItemStats,
+  buildSockets,
   buildItemStats,
   buildItem,
   buildEquipment,

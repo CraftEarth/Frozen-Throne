@@ -16,6 +16,14 @@ function renderItem(item) {
     ? `<li>${esc(item.damage.min)} - ${esc(item.damage.max)} Damage</li>`
     : "";
 
+  const sockets = (item.sockets || [])
+    .map(socket => `<li class="v3-socket socket-${esc(socket.colorName.toLowerCase())}">${esc(socket.colorName)} Socket</li>`)
+    .join("");
+
+  const socketBonus = item.socketBonus
+    ? `<li class="v3-socket-bonus">Socket Bonus ID: ${esc(item.socketBonus)}</li>`
+    : "";
+
   return `
     <div class="v3-item ${esc(item.qualityClass || "q0")}">
       <strong>${esc(item.name)}</strong>
@@ -24,6 +32,8 @@ function renderItem(item) {
         ${armor}
         ${damage}
         ${stats}
+        ${sockets}
+        ${socketBonus}
       </ul>
     </div>
   `;

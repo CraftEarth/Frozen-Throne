@@ -49,7 +49,11 @@ async function getItemTemplates(worldConn, entries = []) {
             stat_type8, stat_value8,
             stat_type9, stat_value9,
             stat_type10, stat_value10,
-            armor, delay, dmg_min1, dmg_max1
+            armor, delay, dmg_min1, dmg_max1,
+            socketColor_1, socketContent_1,
+            socketColor_2, socketContent_2,
+            socketColor_3, socketContent_3,
+            socketBonus
      FROM item_template
      WHERE entry IN (${placeholders})`,
     cleanEntries
