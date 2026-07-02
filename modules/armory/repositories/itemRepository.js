@@ -13,6 +13,8 @@ async function getEquippedItems(charConn, guid) {
 }
 
 async function getBagItems(charConn, guid, limit = 120) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 120, 300));
+
   const [rows] = await charConn.execute(
     `SELECT ci.bag, ci.slot, ci.item AS itemGuid, ii.itemEntry, ii.count,
             ii.durability, ii.randomPropertyId, ii.enchantments
@@ -20,8 +22,8 @@ async function getBagItems(charConn, guid, limit = 120) {
      JOIN item_instance ii ON ii.guid = ci.item
      WHERE ci.guid = ? AND NOT (ci.bag = 0 AND ci.slot BETWEEN 0 AND 18)
      ORDER BY ci.bag ASC, ci.slot ASC
-     LIMIT ?`,
-    [guid, limit]
+     LIMIT ${safeLimit}`,
+    [guid]
   );
 
   return rows;
