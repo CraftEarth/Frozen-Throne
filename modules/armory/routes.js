@@ -1,3 +1,4 @@
+const { buildItem } = require("./engine/items");
 const { buildStats } = require("./engine/stats");
 module.exports = function registerArmoryRoutes(app, tools) {
   const {
@@ -437,7 +438,18 @@ app.get("/armory/:realm/:guid", async (req, res) => {
     const slotIcon = (slot, label) => {
       const gear = gearBySlot.get(slot);
       const tpl = gear ? (templates.get(Number(gear.itemEntry)) || {}) : {};
-      const q = Number(tpl.Quality ?? 0);
+      const itemView = buildItem({
+      itemGuid: gear.itemGuid,
+      itemEntry: gear.itemEntry,
+      name: tpl.name,
+      Quality: tpl.Quality,
+      ItemLevel: tpl.ItemLevel,
+      RequiredLevel: tpl.RequiredLevel,
+      InventoryType: tpl.InventoryType,
+      displayid: tpl.displayid,
+      slot
+    });
+    const q = itemView.qualityId;
 
       if (!gear) {
         return `
@@ -454,8 +466,8 @@ app.get("/armory/:realm/:guid", async (req, res) => {
           <span>${esc(label)}</span>
           <div class="fttip q${q}">
             <strong>${esc(tpl.name || "Unknown Item")}</strong>
-            <small>${esc(itemQualityName(tpl.Quality))}</small>
-            <small>Item Level ${esc(tpl.ItemLevel || "")}</small>
+            <small>${esc(itemView.qualityName)}</small>
+            <small>Item Level ${esc(itemView.itemLevel || "")}</small>
             <small>Entry ${esc(gear.itemEntry)}</small>
             <small class="gm-command">.additem ${esc(gear.itemEntry)}</small>
           </div>
