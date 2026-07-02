@@ -3822,3 +3822,15 @@
 .v3-item.q3 { border-color: rgba(0,112,221,.45); }
 .v3-item.q4 { border-color: rgba(163,53,238,.55); }
 .v3-item.q5 { border-color: rgba(255,128,0,.65); }
+
+.v3-item-stats {
+  list-style: none;
+  padding: 0;
+  margin: 7px 0 0;
+  font-size: 13px;
+  color: #c9f2ff;
+}
+
+.v3-item-stats li {
+  margin: 2px 0;
+}

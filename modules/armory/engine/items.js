@@ -9,6 +9,61 @@ const QUALITY = {
   7: { name: "Heirloom", color: "#e6cc80", className: "q7" }
 };
 
+const ITEM_STATS = {
+  3: "Agility",
+  4: "Strength",
+  5: "Intellect",
+  6: "Spirit",
+  7: "Stamina",
+  12: "Defense Rating",
+  13: "Dodge Rating",
+  14: "Parry Rating",
+  15: "Block Rating",
+  16: "Hit Melee Rating",
+  17: "Hit Ranged Rating",
+  18: "Hit Spell Rating",
+  19: "Crit Melee Rating",
+  20: "Crit Ranged Rating",
+  21: "Crit Spell Rating",
+  28: "Haste Melee Rating",
+  29: "Haste Ranged Rating",
+  30: "Haste Spell Rating",
+  31: "Hit Rating",
+  32: "Crit Rating",
+  35: "Resilience Rating",
+  36: "Haste Rating",
+  37: "Expertise Rating",
+  38: "Attack Power",
+  39: "Ranged Attack Power",
+  41: "Healing Power",
+  42: "Spell Damage",
+  43: "Mana Regen",
+  44: "Armor Penetration",
+  45: "Spell Power",
+  46: "Health Regen",
+  47: "Spell Penetration",
+  48: "Block Value"
+};
+
+function buildItemStats(item = {}) {
+  const stats = [];
+
+  for (let i = 1; i <= 10; i++) {
+    const type = Number(item[`stat_type${i}`] || 0);
+    const value = Number(item[`stat_value${i}`] || 0);
+
+    if (type && value) {
+      stats.push({
+        type,
+        name: ITEM_STATS[type] || `Stat ${type}`,
+        value
+      });
+    }
+  }
+
+  return stats;
+}
+
 const INVENTORY_TYPES = {
   1: "Head",
   2: "Neck",
@@ -63,7 +118,14 @@ function buildItem(item = {}) {
     icon: item.icon || "",
     slot: item.slot ?? null,
     count: Number(item.count || 1),
-    durability: item.durability ?? null
+    durability: item.durability ?? null,
+    armor: Number(item.armor || 0),
+    damage: {
+      min: Number(item.dmg_min1 || 0),
+      max: Number(item.dmg_max1 || 0),
+      speed: Number(item.delay || 0)
+    },
+    stats: buildItemStats(item)
   };
 }
 
@@ -78,6 +140,8 @@ function buildInventory(items = []) {
 module.exports = {
   getQuality,
   getInventoryType,
+  buildItemStats,
+  buildItemStats,
   buildItem,
   buildEquipment,
   buildInventory

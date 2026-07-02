@@ -7,10 +7,24 @@ function esc(v) {
 }
 
 function renderItem(item) {
+  const stats = (item.stats || [])
+    .map(stat => `<li>+${esc(stat.value)} ${esc(stat.name)}</li>`)
+    .join("");
+
+  const armor = item.armor ? `<li>${esc(item.armor)} Armor</li>` : "";
+  const damage = item.damage && item.damage.min && item.damage.max
+    ? `<li>${esc(item.damage.min)} - ${esc(item.damage.max)} Damage</li>`
+    : "";
+
   return `
     <div class="v3-item ${esc(item.qualityClass || "q0")}">
       <strong>${esc(item.name)}</strong>
       <small>Entry ${esc(item.entry)} · iLvl ${esc(item.itemLevel || 0)} · ${esc(item.qualityName || "")}</small>
+      <ul class="v3-item-stats">
+        ${armor}
+        ${damage}
+        ${stats}
+      </ul>
     </div>
   `;
 }
