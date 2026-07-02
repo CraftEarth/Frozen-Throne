@@ -1,6 +1,14 @@
 const { buildCharacterView } = require("../engine/manager");
+const { buildStats } = require("../engine/stats");
+const { buildEquipment, buildInventory } = require("../engine/items");
+const { buildTalentSummary } = require("../engine/talents");
 
-function buildCharacterProfileView(character, helpers = {}) {
+function buildCharacterProfileView(character, options = {}) {
+  const helpers = options.helpers || {};
+  const equipped = options.equipped || [];
+  const inventory = options.inventory || [];
+  const learnedTalents = options.talents || [];
+
   const engineView = buildCharacterView(character, helpers);
 
   return {
@@ -8,7 +16,11 @@ function buildCharacterProfileView(character, helpers = {}) {
     engine: engineView,
     background: engineView.background,
     camera: engineView.camera,
-    race: engineView.race
+    race: engineView.race,
+    stats: buildStats(character),
+    equipment: buildEquipment(equipped),
+    inventory: buildInventory(inventory),
+    talents: buildTalentSummary(character, learnedTalents)
   };
 }
 
