@@ -11,6 +11,11 @@ function buildCharacterProfileView(character, options = {}) {
 
   const engineView = buildCharacterView(character, helpers);
 
+  const mergeTemplate = (item) => ({
+    ...item,
+    ...(item.template || {})
+  });
+
   return {
     character,
     engine: engineView,
@@ -18,8 +23,8 @@ function buildCharacterProfileView(character, options = {}) {
     camera: engineView.camera,
     race: engineView.race,
     stats: buildStats(character),
-    equipment: buildEquipment(equipped),
-    inventory: buildInventory(inventory),
+    equipment: buildEquipment(equipped.map(mergeTemplate)),
+    inventory: buildInventory(inventory.map(mergeTemplate)),
     talents: buildTalentSummary(character, learnedTalents)
   };
 }
