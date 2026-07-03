@@ -46,6 +46,18 @@ const ITEM_STATS = {
 };
 
 
+
+function parseInsertedGemEnchantments(item = {}) {
+  const raw = String(item.enchantments || "").trim();
+  if (!raw) return [];
+
+  const nums = raw.split(/\s+/).map(n => Number(n || 0));
+
+  // Trinity enchantment array commonly stores gem enchant IDs around these positions.
+  // We keep all useful known gem/enchant IDs for display.
+  return nums.filter(n => n > 0);
+}
+
 function buildSockets(item = {}) {
   const sockets = [];
 
@@ -153,6 +165,7 @@ function buildItem(item = {}) {
       speed: Number(item.delay || 0)
     },
     stats: buildItemStats(item),
+    insertedEnchantIds: parseInsertedGemEnchantments(item),
     sockets: buildSockets(item),
     socketBonus: Number(item.socketBonus || 0),
     iconDisplayId: Number(item.displayid || item.displayId || 0)
@@ -170,8 +183,10 @@ function buildInventory(items = []) {
 module.exports = {
   getQuality,
   getInventoryType,
+  parseInsertedGemEnchantments,
   buildSockets,
   buildItemStats,
+  parseInsertedGemEnchantments,
   buildSockets,
   buildItemStats,
   buildItem,

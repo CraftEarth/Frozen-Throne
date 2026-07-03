@@ -3860,3 +3860,74 @@
 .v3-socket-bonus {
   color: #9dff9d;
 }
+
+.v3-socket em {
+  opacity: .75;
+  font-style: normal;
+}
+
+.v3-socket::before {
+  border: 1px solid rgba(255,255,255,.35);
+}
+
+.socket-red::before {
+  background: radial-gradient(circle, #ff8a8a, #b00000 70%);
+}
+
+.socket-blue::before {
+  background: radial-gradient(circle, #8ad6ff, #005eb8 70%);
+}
+
+.socket-yellow::before {
+  background: radial-gradient(circle, #fff08a, #c99500 70%);
+}
+
+.socket-meta::before {
+  background: radial-gradient(circle, #e8a2ff, #4b0066 70%);
+}
+
+.socket-prismatic::before {
+  background: radial-gradient(circle, #ffffff, #b7f7ff 70%);
+}
+
+.v3-item {
+  min-height: 62px;
+  padding-left: 64px;
+}
+
+.v3-item-icon {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid rgba(180,220,255,.35);
+  box-shadow: 0 0 12px rgba(0,180,255,.25);
+  background: #000;
+}
+
+.v3-total-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.v3-total-grid div {
+  border: 1px solid rgba(130, 210, 255, .18);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 20, 35, .55);
+}
+
+.v3-total-grid span {
+  display: block;
+  color: #9fc7dd;
+  font-size: 13px;
+}
+
+.v3-total-grid strong {
+  display: block;
+  font-size: 22px;
+  color: #e8f8ff;
+}

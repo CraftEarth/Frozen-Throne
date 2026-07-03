@@ -1,3 +1,4 @@
+const itemIcons = require("../../../item-icons.json");
 const enchantments = require("../../../public/data/spell-item-enchantments.json");
 function esc(v) {
   return String(v ?? "")
@@ -6,6 +7,60 @@ function esc(v) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 }
+
+function itemIcon(item) {
+  const icon = itemIcons[String(item.iconDisplayId || item.displayid || 0)];
+  return icon ? `https://wow.zamimg.com/images/wow/icons/large/${icon}.jpg` : "";
+}
+
+
+function gearTotals(items = []) {
+  const totals = {};
+
+  for (const item of items) {
+    if (item.armor) totals.Armor = (totals.Armor || 0) + Number(item.armor || 0);
+
+    for (const stat of item.stats || []) {
+      totals[stat.name] = (totals[stat.name] || 0) + Number(stat.value || 0);
+    }
+
+    for (const id of item.insertedEnchantIds || []) {
+      const name = enchantments[id]?.name || "";
+      const m = name.match(/^\+([0-9]+)\s+(.+)$/);
+      if (m) totals[m[2]] = (totals[m[2]] || 0) + Number(m[1]);
+    }
+
+    if (item.socketBonus && enchantments[item.socketBonus]?.name) {
+      const name = enchantments[item.socketBonus].name;
+      const m = name.match(/^\+([0-9]+)\s+(.+)$/);
+      if (m) totals[m[2]] = (totals[m[2]] || 0) + Number(m[1]);
+    }
+  }
+
+  return totals;
+}
+
+function renderGearTotals(items = []) {
+  const totals = gearTotals(items);
+  const order = [
+    "Armor", "Strength", "Agility", "Stamina", "Intellect", "Spirit",
+    "Defense Rating", "Dodge Rating", "Parry Rating", "Block Rating",
+    "Hit Rating", "Crit Rating", "Haste Rating", "Expertise Rating",
+    "Attack Power", "Armor Penetration"
+  ];
+
+  return `
+    <section class="card v3-totals">
+      <h2>Equipped Gear Totals</h2>
+      <div class="v3-total-grid">
+        ${order.filter(k => totals[k]).map(k => `
+          <div><span>${esc(k)}</span><strong>${esc(totals[k])}</strong></div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 
 function renderItem(item) {
   const stats = (item.stats || [])
@@ -17,8 +72,18 @@ function renderItem(item) {
     ? `<li>${esc(item.damage.min)} - ${esc(item.damage.max)} Damage</li>`
     : "";
 
+  const gemEnchantIds = (item.insertedEnchantIds || [])
+    .filter(id => enchantments[id] && enchantments[id].name)
+    .filter(id => ![item.socketBonus].includes(id));
+
   const sockets = (item.sockets || [])
-    .map(socket => `<li class="v3-socket socket-${esc(socket.colorName.toLowerCase())}">${esc(socket.colorName)} Socket</li>`)
+    .map((socket, index) => {
+      const gemId = gemEnchantIds[index];
+      const gemName = gemId && enchantments[gemId] ? enchantments[gemId].name : "";
+      return `<li class="v3-socket socket-${esc(socket.colorName.toLowerCase())}">
+        ${gemName ? `${esc(gemName)} <em>(${esc(socket.colorName)} Socket)</em>` : `${esc(socket.colorName)} Socket`}
+      </li>`;
+    })
     .join("");
 
   const socketBonusName = item.socketBonus && enchantments[item.socketBonus]
@@ -29,8 +94,12 @@ function renderItem(item) {
     ? `<li class="v3-socket-bonus">Socket Bonus: ${esc(socketBonusName || item.socketBonus)}</li>`
     : "";
 
+  const iconUrl = itemIcon(item);
+  const iconHtml = iconUrl ? `<img class="v3-item-icon" src="${esc(iconUrl)}" alt="">` : "";
+
   return `
     <div class="v3-item ${esc(item.qualityClass || "q0")}">
+      ${iconHtml}
       <strong>${esc(item.name)}</strong>
       <small>Entry ${esc(item.entry)} · iLvl ${esc(item.itemLevel || 0)} · ${esc(item.qualityName || "")}</small>
       <ul class="v3-item-stats">
@@ -70,6 +139,8 @@ function renderCharacterV3(view) {
           ${(view.equipment || []).map(renderItem).join("") || "<p>No equipment.</p>"}
         </div>
       </section>
+
+      ${renderGearTotals(view.equipment || [])}
 
       <section class="card">
         <h2>Inventory Engine</h2>
