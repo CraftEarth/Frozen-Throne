@@ -354,6 +354,10 @@ function renderCharacterV3(view) {
         <button data-tab="sets">Sets</button>
         <button data-tab="inventory">Inventory</button>
         <button data-tab="talents">Talents</button>
+        <button data-tab="mounts">Mounts</button>
+        <button data-tab="titles">Titles</button>
+        <button data-tab="achievements">Achievements</button>
+        <button data-tab="guild">Guild</button>
       </nav>
 
       <section class="v3-tab-panel active" id="tab-overview">
@@ -402,6 +406,34 @@ function renderCharacterV3(view) {
           <h2>Talent Engine</h2>
           <p>${esc(view.talents.primaryTree)} · ${esc(view.talents.status)}</p>
           <p>${esc(view.talents.trees.join(" / "))}</p>
+        </section>
+      </section>
+
+      <section class="v3-tab-panel" id="tab-mounts">
+        <section class="card">
+          <h2>Mount Engine</h2>
+          <p>Mount display panel ready. Next patch will connect learned mount data.</p>
+        </section>
+      </section>
+
+      <section class="v3-tab-panel" id="tab-titles">
+        <section class="card">
+          <h2>Titles Engine</h2>
+          <p>Titles display panel ready. Next patch will connect earned title data.</p>
+        </section>
+      </section>
+
+      <section class="v3-tab-panel" id="tab-achievements">
+        <section class="card">
+          <h2>Achievement Engine</h2>
+          <p>Achievement display panel ready. Next patch will connect achievement history.</p>
+        </section>
+      </section>
+
+      <section class="v3-tab-panel" id="tab-guild">
+        <section class="card">
+          <h2>Guild Engine</h2>
+          <p>Guild display panel ready. Next patch will connect guild roster and rank data.</p>
         </section>
       </section>
 

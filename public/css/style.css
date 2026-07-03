@@ -4585,3 +4585,133 @@
   font-size: 1.35rem;
   margin-top: 4px;
 }
+
+/* Armory V3 Compact Wowhead-style skin */
+.card,
+.v3-paper-card,
+.v3-summary-card,
+.v3-stats-panel,
+.v3-set-engine {
+  border-radius: 4px !important;
+  padding: 14px !important;
+}
+
+.v3-summary-grid,
+.v3-stat-groups {
+  gap: 6px !important;
+}
+
+.v3-summary-grid div,
+.v3-stat-group,
+.v3-set-card {
+  border-radius: 3px !important;
+  padding: 8px 10px !important;
+}
+
+.v3-summary-grid strong {
+  font-size: 1rem !important;
+}
+
+.v3-summary-grid span,
+.v3-stat-row span,
+.v3-set-card .muted {
+  font-size: .78rem !important;
+}
+
+.v3-stat-row {
+  padding: 4px 0 !important;
+}
+
+.v3-paper-layout {
+  border-radius: 3px !important;
+  padding: 10px !important;
+}
+
+.v3-paper-model {
+  border-radius: 3px !important;
+}
+
+.v3-paper-slot-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 3px !important;
+}
+
+.v3-paper-slot-icon img {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 2px !important;
+}
+
+.v3-item,
+.item-card {
+  border-radius: 3px !important;
+  padding: 8px 10px !important;
+}
+
+.v3-item strong,
+.item-card strong {
+  font-size: .92rem !important;
+}
+
+.v3-item small,
+.item-card small {
+  font-size: .74rem !important;
+}
+
+.v3-item-icon,
+.item-icon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 3px !important;
+}
+
+h1 {
+  font-size: 2rem !important;
+}
+
+h2 {
+  font-size: 1.45rem !important;
+}
+
+h3 {
+  font-size: 1rem !important;
+}
+
+
+.v3-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  margin: 10px 0;
+  border-bottom: 1px solid rgba(120,210,255,.25);
+}
+
+.v3-tabs button {
+  background: rgba(0, 15, 28, .9);
+  border: 1px solid rgba(120,210,255,.22);
+  border-bottom: 0;
+  color: #b7d8e8;
+  padding: 8px 12px;
+  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.v3-tabs button.active {
+  background: rgba(0, 75, 120, .75);
+  color: #fff;
+}
+
+.v3-tab-panel {
+  display: none;
+}
+
+.v3-tab-panel.active {
+  display: block;
+}
+
+.compact-stat-card p {
+  margin: 6px 0;
+}
