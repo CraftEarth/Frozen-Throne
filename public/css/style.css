@@ -4790,3 +4790,85 @@ h3 {
 .v3-paper-model {
   isolation: isolate;
 }
+
+/* Armory V3 Image Engine - hero header artwork */
+.card.highlight {
+  position: relative;
+  overflow: hidden;
+  min-height: 130px;
+  background-image:
+    linear-gradient(90deg, rgba(0, 8, 18, .96), rgba(0, 30, 55, .55), rgba(0, 8, 18, .94)),
+    url("/images/armory/backgrounds/classes/paladin.jpg") !important;
+  background-size: cover !important;
+  background-position: center 38% !important;
+}
+
+.card.highlight h1,
+.card.highlight p {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 14px rgba(0,0,0,.95), 0 0 18px rgba(80,190,255,.45);
+}
+
+/* Armory V3 - attach content tight to tabs */
+.v3-tabs {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  border-bottom: 1px solid rgba(95, 190, 255, .28);
+}
+
+.v3-tabs + *,
+.v3-tabs ~ .card,
+.v3-tabs ~ section,
+.v3-tabs ~ .tab-content,
+.v3-tabs ~ .v3-tab-content,
+.v3-tabs ~ .v3-panel,
+.v3-tabs ~ .v3-overview {
+  margin-top: 10px !important;
+  padding-top: 0 !important;
+}
+
+main.container > .card:first-of-type,
+main.container > section:first-of-type {
+  margin-top: 10px !important;
+}
+
+.card.highlight + .v3-tabs {
+  margin-top: 0 !important;
+}
+
+/* Armory V3 - final tab/content tightener */
+.v3-tabs{
+  margin-bottom:0!important;
+  padding-bottom:0!important;
+}
+
+.v3-tabs + *{
+  margin-top:0!important;
+}
+
+.v3-content,
+.v3-overview,
+.v3-main{
+  margin-top:0!important;
+  padding-top:8px!important;
+}
+
+/* Armory V3 - remove gap below tabs */
+.v3-tabs{
+    margin-bottom:0!important;
+    padding-bottom:0!important;
+}
+
+.v3-tabs + *{
+    margin-top:0!important;
+    padding-top:0!important;
+}
+
+.v3-tabs + section,
+.v3-tabs + div{
+    margin-top:0!important;
+    padding-top:0!important;
+    transform:translateY(-14px);
+}
+
