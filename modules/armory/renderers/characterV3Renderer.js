@@ -102,6 +102,33 @@ function gearTotals(items = []) {
 
 
 
+
+function guessSetName(items = [], setId = "") {
+  const first = items.find(i => i && i.name);
+  if (!first) return `Set ID ${setId}`;
+
+  let name = String(first.name);
+
+  const removeWords = [
+    "Sanctified", "Heroic",
+    "Helmet", "Helm", "Faceguard", "Headpiece",
+    "Shoulderplates", "Shoulderguards", "Pauldrons", "Spaulders",
+    "Chestguard", "Chestpiece", "Battleplate", "Tunic", "Robe",
+    "Gauntlets", "Gloves", "Handguards",
+    "Legplates", "Legguards", "Leggings", "Greaves"
+  ];
+
+  for (const word of removeWords) {
+    name = name.replace(new RegExp(`\\\\b${word}\\\\b`, "gi"), "");
+  }
+
+  name = name.replace(/\s+/g, " ").trim();
+
+  if (!name || name.length < 3) return `Set ID ${setId}`;
+  return `${name} Set`;
+}
+
+
 function renderSetEngine(items = []) {
   const setItems = (items || []).filter(i => Number(i.itemset || i.itemSet || 0) > 0);
 
@@ -124,7 +151,8 @@ function renderSetEngine(items = []) {
       <h2>Equipment Sets</h2>
       ${[...groups.entries()].map(([setId, equipped]) => `
         <div class="v3-set-card">
-          <h3>Set ID ${esc(setId)}</h3>
+          <h3>${esc(guessSetName(equipped, setId))}</h3>
+          <small class="muted">Set ID ${esc(setId)}</small>
           <p class="muted">${esc(equipped.length)} piece${equipped.length === 1 ? "" : "s"} equipped</p>
           <ul class="v3-set-list">
             ${equipped.map(item => `
