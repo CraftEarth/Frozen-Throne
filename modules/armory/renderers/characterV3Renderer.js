@@ -66,7 +66,7 @@ function renderPaperDoll(items = []) {
         <div class="v3-paper-model">
           <div class="v3-model-glow"></div>
           <div class="v3-paper-left">${leftSlots}</div>
-          <div class="v3-model-placeholder">CHARACTER<br>MODEL</div>
+          <img class="v3-character-model" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
           <div class="v3-paper-right">${rightSlots}</div>
         </div>
       </div>
@@ -99,6 +99,65 @@ function gearTotals(items = []) {
 
   return totals;
 }
+
+
+function renderCharacterStatsPanel(view, items = []) {
+  const totals = gearTotals(items);
+
+  const stat = (name) => Number(totals[name] || 0);
+  const pct = (value, divisor) => value ? `${(value / divisor).toFixed(2)}%` : "0%";
+
+  const groups = [
+    ["Attributes", [
+      ["Strength", stat("Strength")],
+      ["Agility", stat("Agility")],
+      ["Stamina", stat("Stamina")],
+      ["Intellect", stat("Intellect")],
+      ["Spirit", stat("Spirit")]
+    ]],
+    ["Melee", [
+      ["Attack Power", stat("Attack Power")],
+      ["Hit Rating", stat("Hit Rating")],
+      ["Crit Rating", stat("Crit Rating")],
+      ["Armor Penetration", stat("Armor Penetration")],
+      ["Expertise Rating", stat("Expertise Rating")]
+    ]],
+    ["Defense", [
+      ["Armor", stat("Armor")],
+      ["Defense Rating", stat("Defense Rating")],
+      ["Dodge Rating", stat("Dodge Rating")],
+      ["Parry Rating", stat("Parry Rating")],
+      ["Block Rating", stat("Block Rating")]
+    ]],
+    ["Estimated Percentages", [
+      ["Hit", pct(stat("Hit Rating"), 32.79)],
+      ["Crit", pct(stat("Crit Rating"), 45.91)],
+      ["Dodge", pct(stat("Dodge Rating"), 39.35)],
+      ["Parry", pct(stat("Parry Rating"), 49.18)],
+      ["Haste", pct(stat("Haste Rating"), 32.79)]
+    ]]
+  ];
+
+  return `
+    <section class="card v3-stats-panel">
+      <h2>Character Stats Panel</h2>
+      <div class="v3-stat-groups">
+        ${groups.map(([title, rows]) => `
+          <div class="v3-stat-group">
+            <h3>${esc(title)}</h3>
+            ${rows.map(([label, value]) => `
+              <div class="v3-stat-row">
+                <span>${esc(label)}</span>
+                <strong>${esc(value)}</strong>
+              </div>
+            `).join("")}
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 
 function renderGearTotals(items = []) {
   const totals = gearTotals(items);
@@ -206,6 +265,8 @@ function renderCharacterV3(view) {
     </section>
 
       ${renderGearTotals(view.equipment || [])}
+
+      ${renderCharacterStatsPanel(view, view.equipment || [])}
 
       <section class="card">
         <h2>Inventory Engine</h2>
