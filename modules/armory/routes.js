@@ -411,12 +411,27 @@ app.get("/armory/:realm/:guid", async (req, res) => {
     if (allEntries.length) {
       const placeholders = allEntries.map(() => "?").join(",");
       const [items] = await itemConn.execute(
-        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, class, subclass, displayid
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, class, subclass, displayid, itemset
          FROM item_template
          WHERE entry IN (${placeholders})`,
         allEntries
       );
       templates = new Map(items.map(item => [Number(item.entry), item]));
+
+      // Merge template fields like itemset onto equipped/bag rows for Armory V3 engines.
+      for (const row of [...equipped, ...bags]) {
+        const tpl = templates.get(Number(row.itemEntry));
+        if (tpl) {
+          row.name = tpl.name;
+          row.Quality = tpl.Quality;
+          row.ItemLevel = tpl.ItemLevel;
+          row.InventoryType = tpl.InventoryType;
+          row.class = tpl.class;
+          row.subclass = tpl.subclass;
+          row.displayid = tpl.displayid;
+          row.itemset = tpl.itemset || 0;
+        }
+      }
     }
 
     await charConn.end();

@@ -168,6 +168,7 @@ function buildItem(item = {}) {
     insertedEnchantIds: parseInsertedGemEnchantments(item),
     sockets: buildSockets(item),
     socketBonus: Number(item.socketBonus || 0),
+    itemset: Number(item.itemset || item.itemSet || 0),
     iconDisplayId: Number(item.displayid || item.displayId || 0)
   };
 }

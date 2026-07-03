@@ -38,7 +38,7 @@ async function getItemTemplates(worldConn, entries = []) {
 
   const [rows] = await worldConn.execute(
     `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType,
-            class, subclass, displayid,
+            class, subclass, displayid, itemset,
             stat_type1, stat_value1,
             stat_type2, stat_value2,
             stat_type3, stat_value3,

@@ -4527,3 +4527,35 @@
 .v3-stat-row strong {
   color: #fff;
 }
+
+.v3-set-card {
+  border: 1px solid rgba(120, 210, 255, .18);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(0, 15, 28, .68);
+}
+
+.v3-set-card h3 {
+  color: #9ee6ff;
+  margin: 0 0 6px;
+}
+
+.v3-set-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.v3-set-list li {
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(120, 210, 255, .08);
+}
+
+.v3-set-list li.active {
+  color: #7dff9e;
+}
+
+.v3-set-list small {
+  color: #8faec0;
+  margin-left: 6px;
+}

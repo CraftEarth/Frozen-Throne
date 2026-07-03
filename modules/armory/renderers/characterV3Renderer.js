@@ -101,6 +101,43 @@ function gearTotals(items = []) {
 }
 
 
+
+function renderSetEngine(items = []) {
+  const setItems = (items || []).filter(i => Number(i.itemset || i.itemSet || 0) > 0);
+
+  if (!setItems.length) {
+    return "";
+  }
+
+  const groups = new Map();
+
+  for (const item of setItems) {
+    const setId = Number(item.itemset || item.itemSet || 0);
+    if (!groups.has(setId)) {
+      groups.set(setId, []);
+    }
+    groups.get(setId).push(item);
+  }
+
+  return `
+    <section class="card v3-set-engine">
+      <h2>Equipment Sets</h2>
+      ${[...groups.entries()].map(([setId, equipped]) => `
+        <div class="v3-set-card">
+          <h3>Set ID ${esc(setId)}</h3>
+          <p class="muted">${esc(equipped.length)} piece${equipped.length === 1 ? "" : "s"} equipped</p>
+          <ul class="v3-set-list">
+            ${equipped.map(item => `
+              <li class="active">✓ ${esc(item.name)} <small>Entry ${esc(item.entry)}</small></li>
+            `).join("")}
+          </ul>
+        </div>
+      `).join("")}
+    </section>
+  `;
+}
+
+
 function renderCharacterStatsPanel(view, items = []) {
   const totals = gearTotals(items);
 
@@ -267,6 +304,8 @@ function renderCharacterV3(view) {
       ${renderGearTotals(view.equipment || [])}
 
       ${renderCharacterStatsPanel(view, view.equipment || [])}
+
+      ${renderSetEngine(view.equipment || [])}
 
       <section class="card">
         <h2>Inventory Engine</h2>
