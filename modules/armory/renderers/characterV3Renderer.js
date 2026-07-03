@@ -35,11 +35,11 @@ function renderPaperSlot(slot, label, item) {
   const iconUrl = item ? itemIcon(item) : "";
   const q = item ? esc(item.qualityClass || "q0") : "empty";
   const name = item ? esc(item.name) : esc(label);
+  const tip = item ? esc(`${item.name} • ${item.itemLevel || item.ItemLevel || ""} • ${item.qualityName || ""}`) : esc(label);
 
   return `
-    <div class="v3-paper-slot ${q}" data-slot="${esc(slot)}">
-      ${iconUrl ? `<img src="${esc(iconUrl)}" alt="">` : `<div class="v3-paper-empty">?</div>`}
-      <span>${name}</span>
+    <div class="v3-paper-slot-icon ${q}" data-slot="${esc(slot)}" title="${tip}">
+      ${iconUrl ? `<img src="${esc(iconUrl)}" alt="${name}">` : `<div class="v3-paper-empty">?</div>`}
       <small>${esc(label)}</small>
     </div>
   `;
@@ -48,33 +48,30 @@ function renderPaperSlot(slot, label, item) {
 function renderPaperDoll(items = []) {
   const bySlot = gearBySlot(items);
 
+  const leftSlots = [0,1,2,14,4,3,18,8].map(slot => {
+    const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
+    return renderPaperSlot(def[0], def[1], bySlot.get(slot));
+  }).join("");
+
+  const rightSlots = [9,5,6,7,10,11,12,13,15,16,17].map(slot => {
+    const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
+    return renderPaperSlot(def[0], def[1], bySlot.get(slot));
+  }).join("");
+
   return `
     <section class="card v3-paper-card">
       <h2>Equipment Paper Doll</h2>
       <div class="v3-paper-layout">
-        <div class="v3-paper-left">
-          ${[0,1,2,14,4,3,18,8].map(slot => {
-            const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
-            return renderPaperSlot(def[0], def[1], bySlot.get(slot));
-          }).join("")}
-        </div>
-
         <div class="v3-paper-model">
           <div class="v3-model-glow"></div>
+          <div class="v3-paper-left">${leftSlots}</div>
           <div class="v3-model-placeholder">CHARACTER<br>MODEL</div>
-        </div>
-
-        <div class="v3-paper-right">
-          ${[9,5,6,7,10,11,12,13,15,16,17].map(slot => {
-            const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
-            return renderPaperSlot(def[0], def[1], bySlot.get(slot));
-          }).join("")}
+          <div class="v3-paper-right">${rightSlots}</div>
         </div>
       </div>
     </section>
   `;
 }
-
 
 function gearTotals(items = []) {
   const totals = {};
