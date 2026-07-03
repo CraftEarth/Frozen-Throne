@@ -31,6 +31,43 @@ function gearBySlot(items = []) {
   return map;
 }
 
+
+function renderCharacterSummary(view) {
+  const equipment = view.equipment || [];
+  const avgItems = equipment.filter(i => Number(i.itemLevel || i.ItemLevel || 0) > 0);
+  const avgIlvl = avgItems.length
+    ? Math.round(avgItems.reduce((sum, i) => sum + Number(i.itemLevel || i.ItemLevel || 0), 0) / avgItems.length)
+    : 0;
+
+  const epicCount = equipment.filter(i => String(i.qualityName || "").toLowerCase() === "epic").length;
+  const setCount = equipment.filter(i => Number(i.itemset || i.itemSet || 0) > 0).length;
+  const highestIlvl = avgItems.length ? Math.max(...avgItems.map(i => Number(i.itemLevel || i.ItemLevel || 0))) : 0;
+  const gearScore = equipment.reduce((sum, i) => sum + Number(i.itemLevel || i.ItemLevel || 0), 0);
+  const missingGems = equipment.reduce((sum, i) => {
+    const sockets = i.sockets || [];
+    const gems = i.insertedEnchantIds || [];
+    return sum + sockets.filter((socket, idx) => socket && !gems[idx]).length;
+  }, 0);
+
+  return `
+    <section class="card v3-summary-card">
+      <h2>Character Summary</h2>
+      <div class="v3-summary-grid">
+        <div><span>Average iLvl</span><strong>${esc(avgIlvl)}</strong></div>
+        <div><span>Equipped Items</span><strong>${esc(equipment.length)}</strong></div>
+        <div><span>Epic Items</span><strong>${esc(epicCount)}</strong></div>
+        <div><span>Set Pieces</span><strong>${esc(setCount)}</strong></div>
+        <div><span>Gear Score</span><strong>${esc(gearScore)}</strong></div>
+        <div><span>Highest iLvl</span><strong>${esc(highestIlvl)}</strong></div>
+        <div><span>Missing Gems</span><strong>${missingGems ? "⚠ " + esc(missingGems) : "✓ 0"}</strong></div>
+        <div><span>Race</span><strong>${esc(view.race?.name || "Unknown")}</strong></div>
+        <div><span>Class</span><strong>${esc(view.character?.class || "Unknown")}</strong></div>
+      </div>
+    </section>
+  `;
+}
+
+
 function renderPaperSlot(slot, label, item) {
   const iconUrl = item ? itemIcon(item) : "";
   const q = item ? esc(item.qualityClass || "q0") : "empty";
@@ -125,6 +162,7 @@ function guessSetName(items = [], setId = "") {
   name = name.replace(/\s+/g, " ").trim();
 
   if (!name || name.length < 3) return `Set ID ${setId}`;
+  name = name.replace(/\b(Sanctified|Heroic)\b/gi, "").replace(/\s+/g, " ").trim();
   return `${name} Set`;
 }
 
@@ -307,6 +345,8 @@ function renderCharacterV3(view) {
         <h1>${esc(c.name)}</h1>
         <p>Level ${esc(s.level)} ${esc(view.race.name)} ${esc(c.class)}</p>
       </section>
+
+      ${renderCharacterSummary(view)}
 
       <section class="grid grid-2">
       <div class="card">

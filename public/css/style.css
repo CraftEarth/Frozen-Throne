@@ -4559,3 +4559,29 @@
   color: #8faec0;
   margin-left: 6px;
 }
+
+.v3-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.v3-summary-grid div {
+  border: 1px solid rgba(120, 210, 255, .18);
+  border-radius: 12px;
+  background: rgba(0, 15, 28, .68);
+  padding: 12px;
+}
+
+.v3-summary-grid span {
+  display: block;
+  color: #8fb3c8;
+  font-size: .85rem;
+}
+
+.v3-summary-grid strong {
+  display: block;
+  color: #fff;
+  font-size: 1.35rem;
+  margin-top: 4px;
+}
