@@ -4405,3 +4405,41 @@
 .v3-paper-slot-icon small {
   display: none !important;
 }
+
+/* Paper doll icon hover tooltip */
+.v3-paper-slot-icon::after {
+  content: attr(title);
+  position: absolute;
+  left: 52px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 210px;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid rgba(130,210,255,.35);
+  border-radius: 8px;
+  background: rgba(0, 8, 18, .96);
+  color: #eaf8ff;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 0 22px rgba(0,180,255,.25);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  white-space: normal;
+}
+
+.v3-paper-right .v3-paper-slot-icon::after {
+  left: auto;
+  right: 52px;
+}
+
+.v3-paper-slot-icon:hover::after,
+.v3-paper-slot-icon:focus::after {
+  opacity: 1;
+}
+
+.v3-paper-slot-icon:hover {
+  transform: scale(1.08);
+  z-index: 60;
+}
