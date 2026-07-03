@@ -14,6 +14,68 @@ function itemIcon(item) {
 }
 
 
+
+const PAPER_DOLL_SLOTS = [
+  [0, "Head"], [1, "Neck"], [2, "Shoulder"], [14, "Back"], [4, "Chest"],
+  [3, "Shirt"], [18, "Tabard"], [8, "Wrist"], [9, "Hands"], [5, "Waist"],
+  [6, "Legs"], [7, "Feet"], [10, "Ring"], [11, "Ring"], [12, "Trinket"],
+  [13, "Trinket"], [15, "Main Hand"], [16, "Off Hand"], [17, "Ranged"]
+];
+
+function gearBySlot(items = []) {
+  const map = new Map();
+  for (const item of items) {
+    const slot = Number(item.slot ?? item.equipSlot ?? item.inventorySlot ?? -1);
+    if (!Number.isNaN(slot)) map.set(slot, item);
+  }
+  return map;
+}
+
+function renderPaperSlot(slot, label, item) {
+  const iconUrl = item ? itemIcon(item) : "";
+  const q = item ? esc(item.qualityClass || "q0") : "empty";
+  const name = item ? esc(item.name) : esc(label);
+
+  return `
+    <div class="v3-paper-slot ${q}" data-slot="${esc(slot)}">
+      ${iconUrl ? `<img src="${esc(iconUrl)}" alt="">` : `<div class="v3-paper-empty">?</div>`}
+      <span>${name}</span>
+      <small>${esc(label)}</small>
+    </div>
+  `;
+}
+
+function renderPaperDoll(items = []) {
+  const bySlot = gearBySlot(items);
+
+  return `
+    <section class="card v3-paper-card">
+      <h2>Equipment Paper Doll</h2>
+      <div class="v3-paper-layout">
+        <div class="v3-paper-left">
+          ${[0,1,2,14,4,3,18,8].map(slot => {
+            const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
+            return renderPaperSlot(def[0], def[1], bySlot.get(slot));
+          }).join("")}
+        </div>
+
+        <div class="v3-paper-model">
+          <div class="v3-model-glow"></div>
+          <div class="v3-model-placeholder">CHARACTER<br>MODEL</div>
+        </div>
+
+        <div class="v3-paper-right">
+          ${[9,5,6,7,10,11,12,13,15,16,17].map(slot => {
+            const def = PAPER_DOLL_SLOTS.find(s => s[0] === slot);
+            return renderPaperSlot(def[0], def[1], bySlot.get(slot));
+          }).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+
 function gearTotals(items = []) {
   const totals = {};
 
@@ -125,20 +187,25 @@ function renderCharacterV3(view) {
       </section>
 
       <section class="grid grid-2">
-        <div class="card">
-          <h2>Stats Engine</h2>
-          <p>Health: ${esc(s.health)}</p>
-          <p>Mana: ${esc(s.power.mana)}</p>
-          <p>XP: ${esc(s.xp)}</p>
-          <p>Money: ${esc(s.money)}</p>
-          <p>Map: ${esc(s.location.map)} Zone: ${esc(s.location.zone)}</p>
-        </div>
+      <div class="card">
+        <h2>Stats Engine</h2>
+        <p>Health: ${esc(s.health)}</p>
+        <p>Mana: ${esc(s.power.mana)}</p>
+        <p>XP: ${esc(s.xp)}</p>
+        <p>Money: ${esc(s.money)}</p>
+        <p>Map: ${esc(s.location.map)} Zone: ${esc(s.location.zone)}</p>
+      </div>
 
-        <div class="card">
+      <div class="card">
+        ${renderPaperDoll(view.equipment || [])}
+
+        <details class="v3-detail-list">
+          <summary>Full Equipment Details</summary>
           <h2>Equipment Engine</h2>
           ${(view.equipment || []).map(renderItem).join("") || "<p>No equipment.</p>"}
-        </div>
-      </section>
+        </details>
+      </div>
+    </section>
 
       ${renderGearTotals(view.equipment || [])}
 
