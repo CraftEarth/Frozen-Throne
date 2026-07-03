@@ -4443,3 +4443,39 @@
   transform: scale(1.08);
   z-index: 60;
 }
+
+/* Full item tooltip from paper doll icons */
+.v3-paper-card,
+.v3-paper-model {
+  overflow: visible !important;
+}
+
+.v3-paper-slot-icon::after {
+  display: none !important;
+}
+
+.v3-paper-tooltip {
+  display: none;
+  position: absolute;
+  top: -8px;
+  left: 54px;
+  width: 330px;
+  z-index: 999;
+}
+
+.v3-paper-right .v3-paper-tooltip {
+  left: auto;
+  right: 54px;
+}
+
+.v3-paper-slot-icon:hover .v3-paper-tooltip,
+.v3-paper-slot-icon:focus .v3-paper-tooltip {
+  display: block;
+}
+
+.v3-paper-tooltip .v3-item {
+  width: 100%;
+  min-height: unset;
+  padding-left: 64px;
+  box-shadow: 0 0 28px rgba(0, 180, 255, .35);
+}
