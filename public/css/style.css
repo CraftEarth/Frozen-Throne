@@ -4719,3 +4719,74 @@ h3 {
 .v3-basic-stats-grid {
   margin-top: 8px;
 }
+
+/* Armory V3 Image Engine */
+.v3-character-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 210px;
+  background-image:
+    linear-gradient(90deg, rgba(0,8,18,.92), rgba(0,20,38,.55), rgba(0,8,18,.92)),
+    var(--v3-hero-bg) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  border-radius: 3px !important;
+}
+
+.v3-character-hero h1 {
+  text-shadow: 0 0 18px rgba(0,0,0,.95), 0 0 24px rgba(80,190,255,.6);
+}
+
+.v3-paper-model {
+  background-image:
+    radial-gradient(circle at center, rgba(0,170,255,.22), transparent 42%),
+    linear-gradient(180deg, rgba(0,8,18,.35), rgba(0,8,18,.88)),
+    var(--v3-paper-bg) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+/* Armory V3 Image Engine - paper doll artwork */
+.v3-paper-model {
+  position: relative;
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at center, rgba(0, 180, 255, .28), transparent 42%),
+    linear-gradient(180deg, rgba(0, 8, 18, .35), rgba(0, 8, 18, .92)),
+    url("/images/armory/backgrounds/classes/paladin.jpg") !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.v3-paper-model > * {
+  position: relative;
+  z-index: 2;
+}
+
+.v3-model-glow {
+  z-index: 1;
+}
+
+/* Armory V3 Image Engine - keep model centered over artwork */
+.v3-paper-layout {
+  position: relative;
+}
+
+.v3-character-model {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -45%) !important;
+  z-index: 2 !important;
+  max-height: 58% !important;
+  pointer-events: none;
+}
+
+.v3-paper-left,
+.v3-paper-right {
+  z-index: 4 !important;
+}
+
+.v3-paper-model {
+  isolation: isolate;
+}

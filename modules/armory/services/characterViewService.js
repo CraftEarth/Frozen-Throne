@@ -1,3 +1,4 @@
+const { buildImages } = require("../engine/images");
 const { buildCharacterView } = require("../engine/manager");
 const { buildStats } = require("../engine/stats");
 const { buildEquipment, buildInventory } = require("../engine/items");
@@ -25,8 +26,13 @@ function buildCharacterProfileView(character, options = {}) {
     stats: buildStats(character),
     equipment: buildEquipment(equipped.map(mergeTemplate)),
     inventory: buildInventory(inventory.map(mergeTemplate)),
-    talents: buildTalentSummary(character, learnedTalents)
-  };
+    talents: buildTalentSummary(character, learnedTalents),
+    images: buildImages({
+    character,
+    race: engineView.race,
+    stats: buildStats(character)
+}),
+ };
 }
 
 module.exports = {

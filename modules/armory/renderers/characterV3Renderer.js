@@ -83,7 +83,7 @@ function renderPaperSlot(slot, label, item) {
   `;
 }
 
-function renderPaperDoll(items = []) {
+function renderPaperDoll(items = [], images = {}) {
   const bySlot = gearBySlot(items);
 
   const leftSlots = [0,1,2,14,4,3,18,8].map(slot => {
@@ -100,7 +100,7 @@ function renderPaperDoll(items = []) {
     <section class="card v3-paper-card">
       <h2>Equipment Paper Doll</h2>
       <div class="v3-paper-layout">
-        <div class="v3-paper-model">
+        <div class="v3-paper-model" data-bg="${esc(images.paperDoll || "")}">
           <div class="v3-model-glow"></div>
           <div class="v3-paper-left">${leftSlots}</div>
           <img class="v3-character-model" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
@@ -376,7 +376,7 @@ function renderCharacterV3(view) {
             </div>
           </div>
           <div class="card">
-            ${renderPaperDoll(view.equipment || [])}
+            ${renderPaperDoll(view.equipment || [], view.images || {})}
           </div>
         </section>
       </section>
