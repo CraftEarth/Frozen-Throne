@@ -366,11 +366,14 @@ function renderCharacterV3(view) {
           <div class="card compact-stat-card">
             ${renderCharacterSummary(view)}
             <h2>Stats Engine</h2>
-            <p>Health: ${esc(s.health)}</p>
-            <p>Mana: ${esc(s.power.mana)}</p>
-            <p>XP: ${esc(s.xp)}</p>
-            <p>Money: ${esc(s.money)}</p>
-            <p>Map: ${esc(s.location.map)} Zone: ${esc(s.location.zone)}</p>
+            <div class="v3-summary-grid v3-basic-stats-grid">
+              <div><span>Health</span><strong>${esc(Number(s.health || 0).toLocaleString("en-US"))}</strong></div>
+              <div><span>Mana</span><strong>${esc(Number(s.power?.mana || 0).toLocaleString("en-US"))}</strong></div>
+              <div><span>XP</span><strong>${esc(Number(s.xp || 0).toLocaleString("en-US"))}</strong></div>
+              <div><span>Money</span><strong>${esc(Number(s.money || 0).toLocaleString("en-US"))}</strong></div>
+              <div><span>Map</span><strong>${esc(s.location?.map || 0)}</strong></div>
+              <div><span>Zone</span><strong>${esc(s.location?.zone || 0)}</strong></div>
+            </div>
           </div>
           <div class="card">
             ${renderPaperDoll(view.equipment || [])}

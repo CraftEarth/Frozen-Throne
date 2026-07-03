@@ -4715,3 +4715,7 @@ h3 {
 .compact-stat-card p {
   margin: 6px 0;
 }
+
+.v3-basic-stats-grid {
+  margin-top: 8px;
+}
