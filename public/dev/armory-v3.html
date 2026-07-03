@@ -5,18 +5,45 @@
         <p>Level 80 Human 2</p>
       </section>
 
-      <section class="grid grid-2">
-      <div class="card">
-        <h2>Stats Engine</h2>
-        <p>Health: 26654</p>
-        <p>Mana: 5719</p>
-        <p>XP: 0</p>
-        <p>Money: 1280000</p>
-        <p>Map: 1 Zone: 1657</p>
-      </div>
+      
+      <nav class="v3-tabs">
+        <button class="active" data-tab="overview">Overview</button>
+        <button data-tab="equipment">Equipment</button>
+        <button data-tab="stats">Stats</button>
+        <button data-tab="sets">Sets</button>
+        <button data-tab="inventory">Inventory</button>
+        <button data-tab="talents">Talents</button>
+      </nav>
 
-      <div class="card">
+      <section class="v3-tab-panel active" id="tab-overview">
         
+        <section class="grid grid-2">
+          <div class="card compact-stat-card">
+            
+    <section class="card v3-summary-card">
+      <h2>Character Summary</h2>
+      <div class="v3-summary-grid">
+        <div><span>Average iLvl</span><strong>217</strong></div>
+        <div><span>Equipped Items</span><strong>10</strong></div>
+        <div><span>Epic Items</span><strong>8</strong></div>
+        <div><span>Set Pieces</span><strong>1</strong></div>
+        <div><span>Gear Score</span><strong>2174</strong></div>
+        <div><span>Highest iLvl</span><strong>284</strong></div>
+        <div><span>Missing Gems</span><strong>✓ 0</strong></div>
+        <div><span>Race</span><strong>Human</strong></div>
+        <div><span>Class</span><strong>2</strong></div>
+      </div>
+    </section>
+  
+            <h2>Stats Engine</h2>
+            <p>Health: 26654</p>
+            <p>Mana: 5719</p>
+            <p>XP: 0</p>
+            <p>Money: 1280000</p>
+            <p>Map: 1 Zone: 1657</p>
+          </div>
+          <div class="card">
+            
     <section class="card v3-paper-card">
       <h2>Equipment Paper Doll</h2>
       <div class="v3-paper-layout">
@@ -299,9 +326,12 @@
       </div>
     </section>
   
+          </div>
+        </section>
+      </section>
 
-        <details class="v3-detail-list">
-          <summary>Full Equipment Details</summary>
+      <section class="v3-tab-panel" id="tab-equipment">
+        <section class="card">
           <h2>Equipment Engine</h2>
           
     <div class="v3-item q4">
@@ -460,11 +490,11 @@
       </ul>
     </div>
   
-        </details>
-      </div>
-    </section>
+        </section>
+      </section>
 
-      
+      <section class="v3-tab-panel" id="tab-stats">
+        
     <section class="card v3-totals">
       <h2>Equipped Gear Totals</h2>
       <div class="v3-total-grid">
@@ -494,8 +524,7 @@
       </div>
     </section>
   
-
-      
+        
     <section class="card v3-stats-panel">
       <h2>Character Stats Panel</h2>
       <div class="v3-stat-groups">
@@ -623,13 +652,15 @@
       </div>
     </section>
   
+      </section>
 
-      
+      <section class="v3-tab-panel" id="tab-sets">
+        
     <section class="card v3-set-engine">
       <h2>Equipment Sets</h2>
       
         <div class="v3-set-card">
-          <h3>Sanctified Lightsworn Chestguard Set</h3>
+          <h3>Lightsworn Chestguard Set</h3>
           <small class="muted">Set ID 901</small>
           <p class="muted">1 piece equipped</p>
           <ul class="v3-set-list">
@@ -641,10 +672,12 @@
       
     </section>
   
+      </section>
 
-      <section class="card">
-        <h2>Inventory Engine</h2>
-        
+      <section class="v3-tab-panel" id="tab-inventory">
+        <section class="card">
+          <h2>Inventory Engine</h2>
+          
     <div class="v3-item q2">
       <img class="v3-item-icon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bag_23_netherweave.jpg" alt="">
       <strong>Netherweave Bag</strong>
@@ -1089,12 +1122,27 @@
       </ul>
     </div>
   
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Talent Engine</h2>
-        <p>Holy · empty</p>
-        <p>Holy / Protection / Retribution</p>
+      <section class="v3-tab-panel" id="tab-talents">
+        <section class="card">
+          <h2>Talent Engine</h2>
+          <p>Holy · empty</p>
+          <p>Holy / Protection / Retribution</p>
+        </section>
       </section>
+
+      <script>
+        document.querySelectorAll(".v3-tabs button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".v3-tabs button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".v3-tab-panel").forEach(p => p.classList.remove("active"));
+            btn.classList.add("active");
+            document.getElementById("tab-" + btn.dataset.tab)?.classList.add("active");
+          });
+        });
+      </script>
+
     </main>
   </body></html>

@@ -346,45 +346,76 @@ function renderCharacterV3(view) {
         <p>Level ${esc(s.level)} ${esc(view.race.name)} ${esc(c.class)}</p>
       </section>
 
-      ${renderCharacterSummary(view)}
+      
+      <nav class="v3-tabs">
+        <button class="active" data-tab="overview">Overview</button>
+        <button data-tab="equipment">Equipment</button>
+        <button data-tab="stats">Stats</button>
+        <button data-tab="sets">Sets</button>
+        <button data-tab="inventory">Inventory</button>
+        <button data-tab="talents">Talents</button>
+      </nav>
 
-      <section class="grid grid-2">
-      <div class="card">
-        <h2>Stats Engine</h2>
-        <p>Health: ${esc(s.health)}</p>
-        <p>Mana: ${esc(s.power.mana)}</p>
-        <p>XP: ${esc(s.xp)}</p>
-        <p>Money: ${esc(s.money)}</p>
-        <p>Map: ${esc(s.location.map)} Zone: ${esc(s.location.zone)}</p>
-      </div>
+      <section class="v3-tab-panel active" id="tab-overview">
+        
+        <section class="grid grid-2">
+          <div class="card compact-stat-card">
+            ${renderCharacterSummary(view)}
+            <h2>Stats Engine</h2>
+            <p>Health: ${esc(s.health)}</p>
+            <p>Mana: ${esc(s.power.mana)}</p>
+            <p>XP: ${esc(s.xp)}</p>
+            <p>Money: ${esc(s.money)}</p>
+            <p>Map: ${esc(s.location.map)} Zone: ${esc(s.location.zone)}</p>
+          </div>
+          <div class="card">
+            ${renderPaperDoll(view.equipment || [])}
+          </div>
+        </section>
+      </section>
 
-      <div class="card">
-        ${renderPaperDoll(view.equipment || [])}
-
-        <details class="v3-detail-list">
-          <summary>Full Equipment Details</summary>
+      <section class="v3-tab-panel" id="tab-equipment">
+        <section class="card">
           <h2>Equipment Engine</h2>
           ${(view.equipment || []).map(renderItem).join("") || "<p>No equipment.</p>"}
-        </details>
-      </div>
-    </section>
-
-      ${renderGearTotals(view.equipment || [])}
-
-      ${renderCharacterStatsPanel(view, view.equipment || [])}
-
-      ${renderSetEngine(view.equipment || [])}
-
-      <section class="card">
-        <h2>Inventory Engine</h2>
-        ${(view.inventory || []).slice(0, 80).map(renderItem).join("") || "<p>No inventory.</p>"}
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Talent Engine</h2>
-        <p>${esc(view.talents.primaryTree)} · ${esc(view.talents.status)}</p>
-        <p>${esc(view.talents.trees.join(" / "))}</p>
+      <section class="v3-tab-panel" id="tab-stats">
+        ${renderGearTotals(view.equipment || [])}
+        ${renderCharacterStatsPanel(view, view.equipment || [])}
       </section>
+
+      <section class="v3-tab-panel" id="tab-sets">
+        ${renderSetEngine(view.equipment || []) || '<section class="card"><h2>Equipment Sets</h2><p>No active set pieces.</p></section>'}
+      </section>
+
+      <section class="v3-tab-panel" id="tab-inventory">
+        <section class="card">
+          <h2>Inventory Engine</h2>
+          ${(view.inventory || []).slice(0, 80).map(renderItem).join("") || "<p>No inventory.</p>"}
+        </section>
+      </section>
+
+      <section class="v3-tab-panel" id="tab-talents">
+        <section class="card">
+          <h2>Talent Engine</h2>
+          <p>${esc(view.talents.primaryTree)} · ${esc(view.talents.status)}</p>
+          <p>${esc(view.talents.trees.join(" / "))}</p>
+        </section>
+      </section>
+
+      <script>
+        document.querySelectorAll(".v3-tabs button").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".v3-tabs button").forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".v3-tab-panel").forEach(p => p.classList.remove("active"));
+            btn.classList.add("active");
+            document.getElementById("tab-" + btn.dataset.tab)?.classList.add("active");
+          });
+        });
+      </script>
+
     </main>
   `;
 }
