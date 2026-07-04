@@ -1,0 +1,252 @@
+=== OLD VIEWER TEST PAGES ===
+public/js/armory-live-model.js
+public/dev/js/armory-live-model.js
+public/images/armory/models/undead-male-death-knight.svg
+public/armory-viewer-test.html
+public/renders/manifests/character-main-25-wowviewer.json
+public/renders/manifests/character-main-30-wowviewer.json
+public/renders/manifests/character-24-wowviewer.json
+public/renders/manifests/character-main-16-wowviewer.json
+public/renders/manifests/character-main-6-wowviewer.json
+public/renders/manifests/character-main-13-wowviewer.json
+public/renders/manifests/character-main-24-wowviewer.json
+public/renders/manifests/character-main-19-wowviewer.json
+public/renders/manifests/character-beta-15-wowviewer.json
+public/renders/manifests/character-main-8-wowviewer.json
+public/renders/manifests/character-main-15-wowviewer.json
+public/renders/manifests/character-main-17-wowviewer.json
+public/renders/manifests/character-main-12-wowviewer.json
+public/renders/manifests/character-main-21-wowviewer.json
+public/renders/manifests/character-main-22-wowviewer.json
+public/renders/manifests/character-main-29-wowviewer.json
+public/renders/manifests/character-main-5-wowviewer.json
+public/renders/manifests/character-main-7-wowviewer.json
+public/renders/manifests/character-main-27-wowviewer.json
+public/renders/manifests/character-main-23-wowviewer.json
+public/vendor/wow-model-viewer/character_modeling.js.before-chestfix.2026-06-28_21-26
+public/vendor/wow-model-viewer/character_modeling.js
+public/vendor/wow-model-viewer/character_modeling.js.before-slot0-fix.2026-06-28_12-46
+public/vendor/wow-model-viewer/index.js
+public/vendor/wow-model-viewer/wow_model_viewer.js
+public/vendor/wow-model-viewer/character_modeling.js.before-offhand-mapfix.2026-06-28_20-08
+public/vendor/wow-model-viewer/setup.js
+public/vendor/wow-model-viewer/character_modeling.js.before-weapon-returnfix.2026-06-28_20-14
+public/css/style.before-ragdoll-final.2026-06-28_00-18
+public/css/style.before-ragdoll-gear-tighten.2026-06-28_00-34
+public/css/style.css.before-ragdoll-polish.2026-06-28_18-10
+public/css/style.before-model-background.2026-06-27_23-14
+public/css/style.before-model-contrast.2026-06-28_00-24
+public/css/style.before-ragdoll-anchor.2026-06-28_00-19
+public/css/style.before-armory-scale-model.2026-06-27_18-30
+public/css/style.before-ragdoll-clean-label.2026-06-28_00-35
+public/css/style.css.before-viewer-engine-v2.2026-07-01_19-58
+public/css/style.css.before-ragdoll-polish.2026-06-28_18-31
+public/css/style.css.before-viewer-v2-camera.2026-07-01_20-01
+public/css/style.css.before-ragdoll-resize.2026-06-30_18-14
+public/css/style.before-ragdoll-lock.2026-06-28_00-20
+
+=== TEST HTML REFERENCES ===
+public/armory-viewer-test.html:28:    const mod = await import("/vendor/wow-model-viewer/index.js");
+public/armory-viewer-test.html:40:const character = await fetch("/renders/manifests/character-24-wowviewer.json").then(r => r.json());
+
+=== VIEWER INDEX ===
+import {WowModelViewer} from './wow_model_viewer.js'
+import {
+    findRaceGenderOptions,
+    optionsFromModel,
+    getDisplaySlot,
+    findItemsInEquipments,
+    modelingType
+} from "./character_modeling.js"
+
+import "./setup.js"
+
+/**
+ *
+ * @param aspect {number}: Size of the character
+ * @param containerSelector {string}: jQuery selector on the container
+ * @param model {{}|{id: number, type: number}}: A json representation of a character
+ * @param env {('classic'|'live')}: select game enve
+ * @returns {Promise<WowModelViewer>}
+ */
+async function generateModels(aspect, containerSelector, model, env=`live`) {
+    let modelOptions
+    let fullOptions
+    if (model.id && model.type) {
+        const {id, type} = model
+        modelOptions = {models: {id, type}}
+    } else {
+        const {race, gender} = model
+
+        // CHARACTER OPTIONS
+        // This is how we describe a character properties
+        fullOptions = await findRaceGenderOptions(
+            race,
+            gender
+        )
+        modelOptions = optionsFromModel(model, fullOptions)
+    }
+    if(env === `classic`) {
+        modelOptions = {
+            dataEnv: `classic`,
+            env: `classic`,
+            gameDataEnv: `classic`,
+            hd: false,
+            ...modelOptions
+        }
+    } else {
+        modelOptions = {
+            hd: true,
+            ...modelOptions
+        }
+    }
+    const models = {
+        type: 2,
+        contentPath: window.CONTENT_PATH,
+        // eslint-disable-next-line no-undef
+        container: jQuery(containerSelector),
+        aspect: aspect,
+        ...modelOptions
+    }
+    console.log(`Creating viewer with options`, models)
+
+    // eslint-disable-next-line no-undef
+    const wowModelViewer =  await new WowModelViewer(models)
+    if(fullOptions) {
+        wowModelViewer.currentCharacterOptions = fullOptions
+        wowModelViewer.characterGender = model.gender
+        wowModelViewer.characterRace = model.race
+
+    }
+    return wowModelViewer
+}
+
+export {
+    findRaceGenderOptions,
+    generateModels,
+    getDisplaySlot,
+    findItemsInEquipments,
+    modelingType
+}
+
+=== VIEWER MAIN TOP ===
+import {getCharacterOptions} from "./character_modeling.js"
+
+
+// eslint-disable-next-line no-undef
+class WowModelViewer extends ZamModelViewer {
+    /**
+     * Returns the list of animation names
+     * @returns {Array.<string>}
+     */
+    getListAnimations() {
+        return [...new Set(this.renderer.actors[0].h.P.Q.map(e => e.l))]
+    }
+
+    /**
+     * Change character distance
+     * @param {number} val
+     */
+    setDistance(val) {
+        this.renderer.distance = val
+    }
+
+    /**
+     * Change the animation
+     * @param {string} val
+     */
+    setAnimation(val) {
+        this.renderer.actors[0].setAnimation(val)
+    }
+
+    /**
+     * Play / Pause the animation
+     * @param {boolean} val
+     */
+    setAnimPaused(val) {
+        this.renderer.actors[0].setAnimPaused(val)
+    }
+
+    /**
+     * Set azimuth value this value is the angle to the azimuth based on PI
+     * @param {number} val
+     */
+    setAzimuth(val) {
+        this.renderer.azimuth = val
+    }
+
+    /**
+     * Set zenith value this value is the angle to the azimuth based on PI
+     * @param {number} val
+     */
+    setZenith(val) {
+        this.renderer.zenith = val
+    }
+
+    /**
+     * Returns azimuth value this value is the angle to the azimuth based on PI
+     * @return {number}
+     */
+    getAzimuth() {
+        return this.renderer.azimuth
+    }
+
+    /**
+     * Returns zenith value this value is the angle to the azimuth based on PI
+     * @return {number}
+     */
+    getZenith() {
+        return this.renderer.zenith
+    }
+
+    /**
+     * This methode is based on `updateViewer` from Paperdoll.js (https://wow.zamimg.com/js/Paperdoll.js?3ee7ec5121)
+     *
+     * @param slot {number}: Item slot number
+     * @param displayId {number}: Item display id
+     * @param enchant {number}: Enchant (experimental not tested)
+     */
+    updateItemViewer(slot, displayId, enchant) {
+        const s = window.WH.Wow.Item
+        if (slot === s.INVENTORY_TYPE_SHOULDERS) {
+            // this.method(`setShouldersOverride`, [this.getShouldersOverrideData()]);
+        }
+        const a = (slot === s.INVENTORY_TYPE_ROBE) ? s.INVENTORY_TYPE_CHEST : slot
+
+        window.WH.debug(`Clearing model viewer slot:`, a.toString())
+        this.method(`clearSlots`, slot.toString())
+        if (displayId) {
+            window.WH.debug(`Attaching to model viewer slot:`, slot.toString(), `Display ID:`, displayId, `Enchant Visual:`, enchant)
+            this.method(`setItems`, [[{
+                slot: slot,
+                display: displayId,
+                visual: enchant || 0
+            }]])
+        }
+    }
+
+    setNewAppearance(options) {
+        if(!this.currentCharacterOptions) {
+            throw Error(`Character options are not set`)
+        }
+        const characterOptions = getCharacterOptions(options, this.currentCharacterOptions)
+        const race = this.characterRace
+        const gender = this.characterGender
+        this.method(`setAppearance`, {race: race, gender: gender, options: characterOptions})
+    }
+}
+
+// Instance variables
+WowModelViewer.prototype._currentCharacterOptions = 0
+WowModelViewer.prototype._characterGender = null
+WowModelViewer.prototype._characterRace = null
+
+// Getter and Setter for currentCharacterOptions
+Object.defineProperty(WowModelViewer.prototype, `currentCharacterOptions`, {
+    get: function() {
+        return this._currentCharacterOptions
+    },
+    set: function(value) {
+        this._currentCharacterOptions = value
+    }
+})

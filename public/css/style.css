@@ -4901,3 +4901,50 @@ main.container > section:first-of-type {
   opacity:.18!important;
   z-index:2!important;
 }
+
+/* Armory V3 live model tuning */
+#v3-live-character {
+  overflow: hidden !important;
+}
+
+#v3-live-character #model_3d {
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+  transform-origin: center center;
+}
+
+#v3-live-character canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Hide old paper-doll guide once live model loads */
+#v3-live-character.loaded::before,
+#v3-live-character.loaded::after {
+  opacity: 0 !important;
+  display: none !important;
+}
+
+#v3-live-character.loaded .v3-live-loading {
+  display: none !important;
+}
+
+#v3-live-character #model_3d {
+  transform: none !important;
+}
+
+/* Hide old paper-doll guide once live model loads */
+#v3-live-character.loaded::before,
+#v3-live-character.loaded::after {
+  opacity: 0 !important;
+  display: none !important;
+}
+
+#v3-live-character.loaded .v3-live-loading {
+  display: none !important;
+}
+
+#v3-live-character #model_3d {
+  transform: none !important;
+}

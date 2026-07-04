@@ -1,0 +1,102 @@
+=== GIT STATUS ===
+?? ai/
+
+=== RISKY TRACKED FILES ===
+
+=== SECRET KEYWORD SCAN ===
+item-icons.json:38701:  "59468": "ability_mount_swiftpurplewindrider",
+modules/renderer/build-character-input.js:10:  password: [REDACTED] || process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "",
+modules/renderer/lab/package/.github/workflows/npm-publish.yml:34:          NODE_AUTH_TOKEN: [REDACTED] secrets.NPM_TOKEN }}
+public/css/style.css:1654:.ftprofile-head {
+public/css/style.css:1667:.ftportrait {
+public/css/style.css:1676:.ftportrait span {
+public/css/style.css:1734:.ftprofile-core {
+public/css/style.css:1978:.ftprofile-tabs {
+public/css/style.css:1985:.ftprofile-tabs span {
+public/css/style.css:1994:.ftprofile-tabs .active {
+public/css/style.css:2000:.ftprofile-bottom {
+public/css/style.css:2020:  .ftprofile-head,
+public/css/style.css:2021:  .ftprofile-core,
+public/css/style.css:2022:  .ftprofile-bottom {
+public/css/style.css:2077:.ftprofile-core {
+public/css/style.css:2155:.ftprofile-tabs {
+public/css/style.css:2191:.ftprofile-core {
+public/css/style.css:2290:  .ftprofile-head {
+public/css/style.css:2296:  .ftportrait {
+public/css/style.css:2301:  .ftportrait span {
+public/css/style.css:2325:  .ftprofile-core {
+public/css/style.css:2395:  .ftprofile-tabs {
+public/css/style.css:2401:  .ftprofile-tabs span {
+public/css/style.css:2406:  .ftprofile-bottom {
+public/css/style.css:2426:.ftprofile-core {
+public/css/style.css:2504:.ftprofile-tabs {
+public/css/style.css:2595:.ftportrait img{
+public/css/style.css:2604:.ftprofile-core{
+public/css/style.css:2659:.ftprofile-tabs{
+public/css/style.css:3093:.ftportrait {
+public/css/style.css:3100:.ftportrait img {
+public/css/style.css:3109:.ftportrait::before {
+public/css/style.css:3119:.ftportrait span {
+public/css/style.css:3278:.ftportrait-badge {
+public/css/style.css:3291:.ftportrait-race {
+public/css/style.css:3300:.ftportrait-class {
+public/css/style.css:3309:.ftportrait img {
+public/css/style.css:3318:.ftportrait {
+public/css/style.css:3326:.ftportrait-classic {
+public/css/style.css:3334:.ftportrait-orb {
+public/css/style.css:3344:.ftportrait-live {
+public/css/style.css:3352:.ftportrait-viewer {
+public/css/style.css:3358:.ftportrait-viewer canvas {
+public/css/style.css:3363:.ftportrait-live span {
+public/css/style.css:3367:.ftportrait-iframe {
+public/css/style.css:3377:.ftportrait-live {
+public/css/style.css:3383:.ftportrait {
+public/css/style.css:3389:.ftportrait img {
+public/css/style.css:3421:.ftprofile-core {
+public/css/style.css:3453:.ftprofile-tabs {
+public/css/style.css:3458:  .ftprofile-core {
+public/css/style.css:3490:.ftprofile-bottom-clean {
+public/css/style.css:3495:.ftprofile-bottom-clean .inventory-panel {
+public/css/style.css:3499:.ftprofile-bottom-clean .data-table th,
+public/css/style.css:3500:.ftprofile-bottom-clean .data-table td {
+resetpass.js:32:  password = [REDACTED]
+resetpass.js:50:  const password = [REDACTED]
+resetpass.js:62:    password: [REDACTED]
+server.js:26:const SESSION_SECRET = [REDACTED] || "change-this-session-secret-now";
+server.js:124:  password: [REDACTED]
+server.js:154:  return crypto.createHmac("sha256", SESSION_SECRET).update(value).digest("hex");
+server.js:346:  password = [REDACTED]
+server.js:365:  password = [REDACTED]
+server.js:562:  const password = [REDACTED] || "");
+server.js:609:  const password = [REDACTED] || "");
+tools/render-v3-preview.js:25:    password: [REDACTED] || process.env.DB_PASS || ""
+tools/test-live-character-view.js:29:    password: [REDACTED] || process.env.DB_PASS || ""
+
+=== UNTRACKED RISKY FILES ===
+./backups/manual-2026-06-28_01-08/world.sql
+./backups/manual-2026-06-28_01-08/auth.sql
+./backups/manual-2026-06-28_01-08/characters.sql
+./.history/env/.env.backup.2026-06-26_14-16
+./.env
+./server.js.livebackup.2026-06-26_14-16
+
+=== GITIGNORE ===
+.env
+node_modules/
+public/downloads/
+public/download/
+downloads/
+backups/
+*.tar.gz
+cache/
+public/renders/assets/
+public/renders/index/
+.history/
+*.before-*
+*.livebackup*
+*.safe*
+*.save
+website.log
+cache/
+public/renders/input/
+public/renders/manifests/

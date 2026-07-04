@@ -1,0 +1,7 @@
+./ai/debug/ragdoll-scan-2026-07-04_04-36.txt:137:class WowModelViewer extends ZamModelViewer {
+./modules/renderer/lab/package/tests/mocks.js:1:class ZamModelViewer {
+./modules/renderer/lab/package/tests/mocks.js:59:global.ZamModelViewer = ZamModelViewer
+./modules/renderer/lab/package/README.md:42:This library depends on jQuery 3.x and the Wowhead ZamModelViewer. Ensure they're loaded in your HTML pages:
+./modules/renderer/lab/package/README.md:460:Due to the minified version of `ZamModelViewer` the following is regularly outdated
+./modules/renderer/lab/package/wow_model_viewer.js:5:class WowModelViewer extends ZamModelViewer {
+./public/vendor/wow-model-viewer/wow_model_viewer.js:5:class WowModelViewer extends ZamModelViewer {
