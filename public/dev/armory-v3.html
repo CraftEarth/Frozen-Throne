@@ -182,7 +182,13 @@
   </div>
     </div>
   </div>
-          <img class="v3-character-model" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
+          <div class="v3-live-character" id="v3-live-character"
+               data-race="1"
+               data-gender="0"
+               data-class="2">
+            <div class="v3-live-loading">Loading character...</div>
+          </div>
+          <img class="v3-character-model v3-character-fallback" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
           <div class="v3-paper-right">
     <div class="v3-paper-slot-icon empty" data-slot="9" tabindex="0">
       <div class="v3-paper-empty">?</div>
@@ -1180,4 +1186,8 @@
       </script>
 
     </main>
-  </body></html>
+    <script>document.addEventListener("DOMContentLoaded",()=>{const x=document.querySelector(".v3-live-loading"); if(x)x.textContent="JS BOOTED";});</script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://wow.zamimg.com/modelviewer/live/viewer/viewer.min.js"></script>
+<script type="module" src="/dev/js/armory-live-model.js"></script>
+</body></html>

@@ -103,7 +103,13 @@ function renderPaperDoll(items = [], images = {}) {
         <div class="v3-paper-model" data-bg="${esc(images.paperDoll || "")}">
           <div class="v3-model-glow"></div>
           <div class="v3-paper-left">${leftSlots}</div>
-          <img class="v3-character-model" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
+          <div class="v3-live-character" id="v3-live-character"
+               data-race="${esc(images.raceId || images.race || 1)}"
+               data-gender="${esc(images.gender || 0)}"
+               data-class="${esc(images.classId || images.class || 2)}">
+            <div class="v3-live-loading">Loading character...</div>
+          </div>
+          <img class="v3-character-model v3-character-fallback" src="/images/armory/models/undead-male-death-knight.svg" alt="Character Model">
           <div class="v3-paper-right">${rightSlots}</div>
         </div>
       </div>

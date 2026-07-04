@@ -39,7 +39,8 @@ async function main() {
   });
 
   const body = renderCharacterV3(view);
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Armory V3 Preview</title><link rel="stylesheet" href="/css/style.css"></head><body>${body}</body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Armory V3 Preview</title><link rel="stylesheet" href="/css/style.css"></head><body>${body}  <script type="module" src="/js/armory-live-model.js"></script>
+</body></html>`;
 
   fs.mkdirSync(path.join(__dirname, "../public/dev"), { recursive: true });
   fs.writeFileSync(path.join(__dirname, "../public/dev/armory-v3.html"), html);

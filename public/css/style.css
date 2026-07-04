@@ -4872,3 +4872,32 @@ main.container > section:first-of-type {
     transform:translateY(-14px);
 }
 
+
+/* Armory V3 - live model test layer */
+.v3-live-character{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-48%);
+  width:72%;
+  height:82%;
+  z-index:3;
+  border:1px dashed rgba(125,215,255,.35);
+  background:rgba(0,20,40,.18);
+}
+
+.v3-live-loading{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  color:#9fe8ff;
+  font-weight:800;
+  text-shadow:0 0 12px #35a8ff;
+  white-space:nowrap;
+}
+
+.v3-character-fallback{
+  opacity:.18!important;
+  z-index:2!important;
+}
