@@ -17,3 +17,15 @@ website.log
 cache/
 public/renders/input/
 public/renders/manifests/
+
+# Extra public safety
+.env.*
+*.sql
+*.sqlite
+*.pem
+*.key
+id_rsa
+id_ed25519
+*.bak
+*.old
+*.orig
