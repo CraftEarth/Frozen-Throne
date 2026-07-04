@@ -430,13 +430,15 @@ function copyAdminText(text) {
         : `
           <a href="/">Home</a>
           <a href="/news">News</a>
+          <a href="/armory">Database</a>
           <a href="/guilds">Guilds</a>
-      <a href="/players">Players</a>
-          <a href="/armory">Armory</a>
-          <a href="/features">Features</a>
+          <a href="/rankings">Rankings</a>
           <a href="/download">Download</a>
           <a href="/vote">Vote</a>
           <a href="/shop">Shop</a>
+          <a href="/players">Players</a>
+          <a href="/npc">NPC</a>
+          <a href="/forums">Forums</a>
         `
       }
     </nav>
@@ -474,6 +476,81 @@ loadStats();
 </body>
 </html>`);
 }
+
+
+app.get("/rankings", (req, res) => render(req, res, "Rankings", `<main class="container"><div class="card"><h1>Rankings</h1><p class="muted">FrozenThrone rankings are coming soon.</p></div></main>`));
+app.get("/npc", (req, res) => render(req, res, "NPC Database", `<main class="container"><div class="card"><h1>NPC Database</h1><p class="muted">NPC browser will live inside the Database system.</p></div></main>`));
+app.get("/forums", (req, res) => render(req, res, "Forums", `<main class="container"><div class="card"><h1>Forums</h1><p class="muted">FrozenThrone forums are coming soon.</p></div></main>`));
+
+app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
+app.get("/rankings", (req, res) => render(req, res, "Rankings", `<main class="ft-shell"><section class="ft-frame"><div class="ft-section-tabs"><a class="active">Level</a><a>PvP</a><a>Guilds</a><a>Richest</a></div><div class="ft-panel"><h1>Rankings</h1><p class="muted">Rankings engine coming next.</p></div></section></main>`));
+app.get("/forums", (req, res) => render(req, res, "Forums", `<main class="ft-shell"><section class="ft-frame"><div class="ft-section-tabs"><a class="active">General</a><a>Guides</a><a>Bug Reports</a><a>Suggestions</a><a>Support</a></div><div class="ft-panel"><h1>Forums</h1><p class="muted">Forum system coming soon.</p></div></section></main>`));
+
+
+app.get("/database", (req, res) => res.redirect("/armory"));
+
+app.get(["/database", "/armory"], (req, res) => {
+  const tab = String(req.query.tab || "characters").toLowerCase();
+
+  const tabs = [
+    ["characters", "Characters"],
+    ["items", "Items"],
+    ["npcs", "NPCs"],
+    ["quests", "Quests"],
+    ["spells", "Spells"],
+    ["mounts", "Mounts"],
+    ["titles", "Titles"],
+    ["achievements", "Achievements"]
+  ];
+
+  const tabbar = tabs.map(([key, label]) =>
+    `<a class="${tab === key ? "active" : ""}" href="/armory?tab=${key}">${label}</a>`
+  ).join("");
+
+  const panels = {
+    characters: `
+      <div class="db-grid">
+        <a class="db-tile" href="/armory/characters"><h3>Character Browser</h3><p>Search players, gear, level, race, class, guild, and online status.</p></a>
+        <a class="db-tile" href="/armory/main/7"><h3>Live Character Sheet</h3><p>Open the new 3D character database page.</p></a>
+      </div>
+    `,
+    items: `
+      <div class="db-grid">
+        <div class="db-tile"><h3>Item Database</h3><p>Weapons, armor, bags, consumables, custom items, vendors, drops, and ownership.</p></div>
+        <div class="db-tile"><h3>Coming Next</h3><p>Search by item name, entry ID, quality, level, slot, and source.</p></div>
+      </div>
+    `,
+    npcs: `
+      <div class="db-grid">
+        <div class="db-tile"><h3>NPC Database</h3><p>Creatures, vendors, trainers, quest NPCs, loot tables, and spawn info.</p></div>
+        <div class="db-tile"><h3>Vendor Search</h3><p>Find what NPC sells each item.</p></div>
+      </div>
+    `,
+    quests: `
+      <div class="db-grid">
+        <div class="db-tile"><h3>Quest Database</h3><p>Objectives, starters, enders, rewards, levels, zones, and chains.</p></div>
+      </div>
+    `,
+    spells: `<div class="db-grid"><div class="db-tile"><h3>Spell Database</h3><p>Spell search coming soon.</p></div></div>`,
+    mounts: `<div class="db-grid"><div class="db-tile"><h3>Mount Database</h3><p>Mount list coming soon.</p></div></div>`,
+    titles: `<div class="db-grid"><div class="db-tile"><h3>Title Database</h3><p>Title list coming soon.</p></div></div>`,
+    achievements: `<div class="db-grid"><div class="db-tile"><h3>Achievement Database</h3><p>Achievement browser coming soon.</p></div></div>`
+  };
+
+  render(req, res, "FrozenThrone Database", `
+    <main class="ft-shell">
+      <section class="ft-frame">
+        <div class="ft-db-head">
+          <p class="eyebrow">FrozenThrone Database</p>
+          <h1>Game Database</h1>
+          <p>Characters, items, NPCs, quests, spells, mounts, titles, and achievements.</p>
+        </div>
+        <div class="ft-section-tabs">${tabbar}</div>
+        <div class="ft-panel">${panels[tab] || panels.characters}</div>
+      </section>
+    </main>
+  `);
+});
 
 app.get(["/", "/index.html"], (req, res) => {
   render(req, res, "FrozenThrone | Wrath of the Lich King 3.3.5a Private Server", `<main>

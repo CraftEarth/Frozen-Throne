@@ -4962,3 +4962,422 @@ main.container > section:first-of-type {
 .v3-paper-model {
   border: 1px solid rgba(105, 200, 255, .22) !important;
 }
+
+/* FrozenThrone global navbar tabs */
+.navbar {
+  border-bottom: 1px solid rgba(112, 202, 255, .35);
+}
+
+.nav-inner {
+  gap: 18px;
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.nav-links a {
+  padding: 10px 13px;
+  border: 1px solid rgba(112, 202, 255, .28);
+  background: linear-gradient(to bottom, rgba(18, 62, 95, .85), rgba(4, 18, 31, .92));
+  color: #e9f7ff;
+  text-decoration: none;
+  font-weight: 800;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.nav-links a:hover {
+  background: linear-gradient(to bottom, rgba(35, 132, 194, .95), rgba(5, 54, 88, .95));
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .nav-inner {
+    justify-content: center;
+  }
+
+  .nav-links {
+    justify-content: center;
+  }
+
+  .nav-links a {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* FIX global nav into small game tabs */
+.navbar {
+  padding: 10px 18px !important;
+}
+
+.nav-inner {
+  max-width: 1320px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+}
+
+.logo {
+  min-width: 210px !important;
+}
+
+.nav-links {
+  flex: 1 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.nav-links a {
+  font-size: 14px !important;
+  padding: 9px 14px !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(75, 151, 205, .55) !important;
+  border-left: 0 !important;
+  background: linear-gradient(to bottom, #0f3957, #061a2d) !important;
+  color: #eaf8ff !important;
+  text-shadow: 0 1px 2px #000 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+  white-space: nowrap !important;
+}
+
+.nav-links a:first-child {
+  border-left: 1px solid rgba(75,151,205,.55) !important;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  background: linear-gradient(to bottom, #0f76ad, #07446c) !important;
+}
+
+.nav-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 260px !important;
+  justify-content: flex-end !important;
+}
+
+.nav-actions .btn {
+  padding: 9px 14px !important;
+  font-size: 14px !important;
+}
+
+.status-dot {
+  font-size: 13px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1100px) {
+  .nav-inner {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  .logo,
+  .nav-actions {
+    min-width: auto !important;
+  }
+
+  .nav-links {
+    order: 3 !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .nav-links a {
+    font-size: 13px !important;
+    padding: 8px 10px !important;
+  }
+}
+
+/* FrozenThrone V2 shell: square database tab style */
+.navbar {
+  padding: 10px 14px !important;
+  border-bottom: 1px solid rgba(93, 188, 255, .35) !important;
+  background: rgba(2, 8, 16, .92) !important;
+}
+
+.nav-inner {
+  max-width: 1340px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+.logo {
+  min-width: 220px !important;
+}
+
+.nav-links {
+  flex: 1 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.nav-links a {
+  padding: 8px 12px !important;
+  border: 1px solid rgba(87, 172, 226, .45) !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(to bottom, rgba(14,57,88,.95), rgba(4,20,34,.96)) !important;
+  color: #e9f8ff !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+}
+
+.nav-links a:first-child {
+  border-left: 1px solid rgba(87, 172, 226, .45) !important;
+}
+
+.nav-links a:hover {
+  background: linear-gradient(to bottom, rgba(15,119,176,.95), rgba(5,58,91,.96)) !important;
+}
+
+.nav-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 250px !important;
+  justify-content: flex-end !important;
+}
+
+.nav-actions .btn {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+}
+
+.ft-shell {
+  max-width: 1280px;
+  margin: 18px auto 40px;
+  padding: 0 18px;
+}
+
+.ft-frame {
+  border: 1px solid rgba(93, 188, 255, .35);
+  background: rgba(1, 12, 22, .74);
+  box-shadow: 0 0 35px rgba(0, 120, 190, .13);
+}
+
+.ft-section-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid rgba(93, 188, 255, .35);
+  background: rgba(2, 14, 26, .9);
+}
+
+.ft-section-tabs a {
+  padding: 10px 14px;
+  border-right: 1px solid rgba(93, 188, 255, .28);
+  background: linear-gradient(to bottom, rgba(13, 55, 86, .9), rgba(3, 20, 34, .92));
+  color: #dff5ff;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ft-section-tabs a.active,
+.ft-section-tabs a:hover {
+  background: linear-gradient(to bottom, rgba(10, 114, 172, .98), rgba(4, 54, 86, .98));
+  color: #fff;
+}
+
+.ft-panel {
+  padding: 22px;
+}
+
+@media (max-width: 1100px) {
+  .nav-inner {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  .logo,
+  .nav-actions {
+    min-width: auto !important;
+  }
+
+  .nav-links {
+    order: 3 !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+.ft-db-head {
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid rgba(93,188,255,.32);
+  background: rgba(2,12,22,.76);
+}
+
+.ft-db-head h1 {
+  margin: 0;
+  color: #aee3ff;
+  font-size: 34px;
+}
+
+.ft-db-head p {
+  margin: 8px 0 0;
+  color: #d8f3ff;
+}
+
+.db-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.db-tile {
+  display: block;
+  padding: 18px;
+  border: 1px solid rgba(93,188,255,.3);
+  background: rgba(0, 13, 24, .78);
+  color: #eaf8ff;
+  text-decoration: none;
+}
+
+.db-tile h3 {
+  margin: 0 0 8px;
+  color: #aee3ff;
+}
+
+.db-tile p {
+  margin: 0;
+  color: #c8e7f5;
+}
+
+.db-tile:hover {
+  background: rgba(6, 48, 76, .88);
+}
+
+/* Database page match Character V3 frame */
+.ft-shell {
+  max-width: 1120px !important;
+  margin: 24px auto 50px !important;
+  padding: 0 18px !important;
+}
+
+.ft-frame {
+  border: 1px solid rgba(93,188,255,.38) !important;
+  background: rgba(0, 10, 18, .82) !important;
+  box-shadow: 0 0 26px rgba(0, 132, 210, .16) !important;
+}
+
+.ft-db-head {
+  padding: 26px 30px !important;
+  min-height: 155px !important;
+  background:
+    linear-gradient(to right, rgba(0,10,18,.95), rgba(0,20,35,.65)),
+    url("/images/frozenthrone-bg.jpeg") center center / cover no-repeat !important;
+  border-bottom: 1px solid rgba(93,188,255,.38) !important;
+}
+
+.ft-db-head .eyebrow {
+  color: #c7ecff !important;
+  letter-spacing: 5px !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+}
+
+.ft-db-head h1 {
+  font-size: 42px !important;
+  line-height: 1 !important;
+  margin: 8px 0 12px !important;
+  color: #aee3ff !important;
+  text-shadow: 0 0 18px rgba(80,190,255,.6) !important;
+}
+
+.ft-db-head p {
+  font-size: 18px !important;
+  max-width: 780px !important;
+}
+
+.ft-section-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0 !important;
+  background: rgba(2,15,28,.92) !important;
+  border-bottom: 1px solid rgba(93,188,255,.38) !important;
+}
+
+.ft-section-tabs a {
+  padding: 13px 18px !important;
+  border-right: 1px solid rgba(93,188,255,.34) !important;
+  border-bottom: 1px solid rgba(93,188,255,.18) !important;
+  background: linear-gradient(to bottom, rgba(13,50,77,.95), rgba(3,19,32,.95)) !important;
+  color: #dff5ff !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+}
+
+.ft-section-tabs a.active,
+.ft-section-tabs a:hover {
+  background: linear-gradient(to bottom, #0b74ad, #063b61) !important;
+  color: #fff !important;
+}
+
+.ft-panel {
+  padding: 26px !important;
+}
+
+.db-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.db-tile {
+  border: 1px solid rgba(93,188,255,.38) !important;
+  background: rgba(0, 10, 18, .82) !important;
+  padding: 24px !important;
+  min-height: 130px !important;
+  color: #eaf8ff !important;
+  text-decoration: none !important;
+}
+
+.db-tile h3 {
+  color: #aee3ff !important;
+  font-size: 28px !important;
+  margin: 0 0 10px !important;
+}
+
+.db-tile p {
+  font-size: 17px !important;
+  color: #cfeeff !important;
+}
+
+@media (max-width: 760px) {
+  .ft-shell {
+    padding: 0 14px !important;
+  }
+
+  .ft-db-head h1 {
+    font-size: 34px !important;
+  }
+
+  .ft-section-tabs a {
+    font-size: 15px !important;
+    padding: 12px 14px !important;
+  }
+
+  .db-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
