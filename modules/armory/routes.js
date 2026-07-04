@@ -1,4 +1,7 @@
 const { buildStats } = require("./engine/stats");
+const { loadCharacterView } = require("./repositories/characterViewRepository");
+const { buildCharacterProfileView } = require("./services/characterViewService");
+const { renderCharacterV3 } = require("./renderers/characterV3Renderer");
 module.exports = function registerArmoryRoutes(app, tools) {
   const {
     render,
@@ -341,352 +344,42 @@ app.get("/armory/:realm/:guid", async (req, res) => {
   const guid = Number(req.params.guid);
 
   if (!realm || !Number.isInteger(guid) || guid <= 0) {
-    return render(req, res, "Armory", errorCard("Invalid armory character request."));
+    return render(req, res, "Character Database", errorCard("Invalid character database request."));
   }
+
+  let charConn;
+  let worldConn;
 
   try {
-    const charConn = await characterDb(realm.db);
-    const itemConn = await worldDb();
+    charConn = await characterDb(realm.db);
+    worldConn = await worldDb();
 
-    const [chars] = await charConn.execute(
-      `SELECT guid, account, name, race, class, gender, level, xp, money, online, totalKills, todayKills, zone, map
-       FROM characters
-       WHERE guid = ? AND (deleteDate IS NULL OR deleteDate = 0)
-       LIMIT 1`,
-      [guid]
-    );
+    const data = await loadCharacterView(charConn, worldConn, guid);
 
-    if (!chars.length) {
-      await charConn.end();
-      await itemConn.end();
-      return render(req, res, "Armory", errorCard("Character not found."));
+    if (!data || !data.character) {
+      return render(req, res, "Character Database", errorCard("Character not found."));
     }
 
-    const ch = chars[0];
-
-    const [equipped] = await charConn.execute(
-      `SELECT ci.slot, ci.item AS itemGuid, ii.itemEntry, ii.count, ii.durability, ii.randomPropertyId, ii.enchantments
-       FROM character_inventory ci
-       JOIN item_instance ii ON ii.guid = ci.item
-       WHERE ci.guid = ? AND ci.bag = 0 AND ci.slot BETWEEN 0 AND 18
-       ORDER BY ci.slot ASC`,
-      [guid]
-    );
-
-    const [bags] = await charConn.execute(
-      `SELECT ci.bag, ci.slot, ci.item AS itemGuid, ii.itemEntry, ii.count, ii.durability, ii.randomPropertyId
-       FROM character_inventory ci
-       JOIN item_instance ii ON ii.guid = ci.item
-       WHERE ci.guid = ? AND NOT (ci.bag = 0 AND ci.slot BETWEEN 0 AND 18)
-       ORDER BY ci.bag ASC, ci.slot ASC
-       LIMIT 120`,
-      [guid]
-    );
-
-    let guildName = "";
-    try {
-      const [guilds] = await charConn.execute(
-        `SELECT g.name
-         FROM guild_member gm
-         JOIN guild g ON g.guildid = gm.guildid
-         WHERE gm.guid = ?
-         LIMIT 1`,
-        [guid]
-      );
-      guildName = guilds[0]?.name || "";
-    } catch {}
-
-    const [achievements] = await charConn.execute(
-      `SELECT achievement, date
-       FROM character_achievement
-       WHERE guid = ?
-       ORDER BY date DESC
-       LIMIT 50`,
-      [guid]
-    );
-
-    const allEntries = [...new Set([...equipped, ...bags].map(i => i.itemEntry).filter(Boolean))];
-    let templates = new Map();
-
-    if (allEntries.length) {
-      const placeholders = allEntries.map(() => "?").join(",");
-      const [items] = await itemConn.execute(
-        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, class, subclass, displayid, itemset
-         FROM item_template
-         WHERE entry IN (${placeholders})`,
-        allEntries
-      );
-      templates = new Map(items.map(item => [Number(item.entry), item]));
-
-      // Merge template fields like itemset onto equipped/bag rows for Armory V3 engines.
-      for (const row of [...equipped, ...bags]) {
-        const tpl = templates.get(Number(row.itemEntry));
-        if (tpl) {
-          row.name = tpl.name;
-          row.Quality = tpl.Quality;
-          row.ItemLevel = tpl.ItemLevel;
-          row.InventoryType = tpl.InventoryType;
-          row.class = tpl.class;
-          row.subclass = tpl.subclass;
-          row.displayid = tpl.displayid;
-          row.itemset = tpl.itemset || 0;
-        }
-      }
-    }
-
-    await charConn.end();
-    await itemConn.end();
-
-    const gearBySlot = new Map(equipped.map(g => [Number(g.slot), g]));
-    const avgItems = equipped.map(g => templates.get(Number(g.itemEntry))).filter(t => t && Number(t.ItemLevel) > 0);
-    const avgIlvl = avgItems.length ? Math.round(avgItems.reduce((a, t) => a + Number(t.ItemLevel || 0), 0) / avgItems.length) : 0;
-
-    const raceKey = raceName(ch.race).toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const genderKey = Number(ch.gender) === 1 ? "female" : "male";
-    const classKey = className(ch.class).toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const modelImage = `/images/armory/models/character-${ch.guid}.png`;
-    const fallbackModelImage = `/images/armory/models/${raceKey}-${genderKey}-${classKey}.svg`;
-    const portraitImage = `/images/armory/portraits/character-${ch.guid}.png`;
-    const fallbackPortraitImage = `/images/armory/portraits/${raceKey}-${genderKey}-${classKey}.svg`;
-
-    const slotIcon = (slot, label) => {
-      const gear = gearBySlot.get(slot);
-      const tpl = gear ? (templates.get(Number(gear.itemEntry)) || {}) : {};
-      const q = Number(tpl.Quality ?? 0);
-
-      if (!gear) {
-        return `
-          <div class="ftslot empty">
-            <div class="ftslot-icon">?</div>
-            <span>${esc(label)}</span>
-          </div>
-        `;
-      }
-
-      return `
-        <a class="ftslot q${q}" href="/armory/items?q=${gear.itemEntry}">
-          <img src="${itemIconUrl(tpl.displayid)}" alt="">
-          <span>${esc(label)}</span>
-          <div class="fttip q${q}">
-            <strong>${esc(tpl.name || "Unknown Item")}</strong>
-            <small>${esc(itemQualityName(tpl.Quality))}</small>
-            <small>Item Level ${esc(tpl.ItemLevel || "")}</small>
-            <small>Entry ${esc(gear.itemEntry)}</small>
-            <small class="gm-command">.additem ${esc(gear.itemEntry)}</small>
-          </div>
-        </a>
-      `;
-    };
-
-    const bagRows = bags.slice(0, 80).map(item => {
-      const tpl = templates.get(Number(item.itemEntry)) || {};
-      return `
-        <tr>
-          <td><img class="item-icon" src="${itemIconUrl(tpl.displayid)}" alt=""> <strong>${esc(tpl.name || "Unknown Item")}</strong></td>
-          <td>${esc(item.itemEntry)}</td>
-          <td>${esc(item.count)}</td>
-          <td>${esc(itemQualityName(tpl.Quality))}</td>
-        </tr>
-      `;
-    }).join("");
-
-    const achievementRows = achievements.map(a => {
-      const earned = a.date ? new Date(Number(a.date) * 1000).toLocaleString("en-US") : "Unknown";
-      return `
-        <tr>
-          <td><strong>Achievement #${esc(a.achievement)}</strong></td>
-          <td>${esc(earned)}</td>
-        </tr>
-      `;
-    }).join("");
-
-    render(req, res, `${ch.name} Character Profile`, `
-      <main class="container ftcharv2-page">
-        <section class="ftcharv2">
-
-          <div class="ftcharv2-head">
-            <div class="ftcharv2-title">
-              <h1>${esc(ch.name)}</h1>
-              <p>${esc(realm.name)} · Level ${esc(ch.level)} ${esc(raceName(ch.race))} ${esc(className(ch.class))}${guildName ? ` · ${esc(guildName)}` : ""}</p>
-            </div>
-            <div class="ftcharv2-status ${ch.online ? "on" : "off"}">${ch.online ? "Online" : "Offline"}</div>
-          </div>
-
-          <div class="ftcharv2-main">
-            <aside class="ftcharv2-gear">
-              <h3>Equipment</h3>
-              ${slotIcon(0, "Head")}
-              ${slotIcon(1, "Neck")}
-              ${slotIcon(2, "Shoulder")}
-              ${slotIcon(14, "Back")}
-              ${slotIcon(4, "Chest")}
-              ${slotIcon(8, "Wrist")}
-              ${slotIcon(9, "Hands")}
-              ${slotIcon(5, "Waist")}
-              ${slotIcon(6, "Legs")}
-              ${slotIcon(7, "Feet")}
-              ${slotIcon(10, "Ring")}
-              ${slotIcon(11, "Ring")}
-              ${slotIcon(12, "Trinket")}
-              ${slotIcon(13, "Trinket")}
-              ${slotIcon(15, "Main Hand")}
-              ${slotIcon(16, "Off Hand")}
-              ${slotIcon(17, "Ranged")}
-            </aside>
-
-            <section class="ftcharv2-model">
-              <div id="ftmodel_3d" class="ftmodel-viewer" data-realm="${esc(req.params.realm || "main")}" data-guid="${esc(ch.guid)}"></div>
-              <div id="ftmodel-status" class="ftmodel-status">Loading 3D character...</div>
-              <button id="ftmodel-reset" class="ftmodel-reset" type="button">Reset View</button>
-            </section>
-
-            <aside class="ftcharv2-info">
-              <h3>Summary</h3>
-              <div><span>Realm</span><strong>${esc(realm.name)}</strong></div>
-              <div><span>Guild</span><strong>${guildName ? esc(guildName) : "None"}</strong></div>
-              <div><span>Average Item Level</span><strong>${esc(avgIlvl)}</strong></div>
-              <div><span>Gold</span><strong>${moneyToGold(ch.money)}</strong></div>
-              <div><span>Total Kills</span><strong>${esc(ch.totalKills || 0)}</strong></div>
-              <div><span>Today Kills</span><strong>${esc(ch.todayKills || 0)}</strong></div>
-              <div><span>Zone</span><strong>${esc(ch.zone || 0)}</strong></div>
-              <div><span>Map</span><strong>${esc(ch.map || 0)}</strong></div>
-            </aside>
-          </div>
-
-          <div class="ftcharv2-tabs">
-            <button class="active" data-tab="summary">Summary</button>
-            <button data-tab="stats">Stats</button>
-            <button data-tab="talents">Talents</button>
-            <button data-tab="inventory">Inventory</button>
-            <button data-tab="achievements">Achievements</button>
-            <button data-tab="activity">Activity</button>
-            <button data-tab="forums">Forums</button>
-          </div>
-
-          <div class="ftcharv2-panel active" id="tab-summary">
-            <h3>Character Summary</h3>
-            <p>${esc(ch.name)} is a level ${esc(ch.level)} ${esc(raceName(ch.race))} ${esc(className(ch.class))} on ${esc(realm.name)}.</p>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-stats">
-            <h3>Stats</h3>
-            <div class="ftcharv2-statgrid">
-              <div><span>Level</span><strong>${esc(buildStats(ch).level)}</strong></div>
-              <div><span>Health</span><strong>${esc(buildStats(ch).health)}</strong></div>
-              <div><span>Mana</span><strong>${esc(buildStats(ch).power.mana)}</strong></div>
-              <div><span>Rage</span><strong>${esc(buildStats(ch).power.rage)}</strong></div>
-              <div><span>Energy</span><strong>${esc(buildStats(ch).power.energy)}</strong></div>
-              <div><span>Runic Power</span><strong>${esc(buildStats(ch).power.runicPower)}</strong></div>
-              <div><span>XP</span><strong>${esc(buildStats(ch).xp)}</strong></div>
-              <div><span>Total Kills</span><strong>${esc(buildStats(ch).kills.total)}</strong></div>
-              <div><span>Today Kills</span><strong>${esc(buildStats(ch).kills.today)}</strong></div>
-              <div><span>Money</span><strong>${esc(buildStats(ch).money)}</strong></div>
-              <div><span>Map</span><strong>${esc(buildStats(ch).location.map)}</strong></div>
-              <div><span>Zone</span><strong>${esc(buildStats(ch).location.zone)}</strong></div>
-              <div><span>Online</span><strong>${buildStats(ch).online ? "Yes" : "No"}</strong></div>
-            </div>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-talents">
-            <h3>Talents</h3>
-            <p>Talent inspection will be added after we wire character talent tables.</p>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-inventory">
-            <h3>Inventory</h3>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead><tr><th>Item</th><th>Entry</th><th>Count</th><th>Quality</th></tr></thead>
-                <tbody>${bagRows || `<tr><td colspan="4">No bag items found.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-achievements">
-            <h3>Achievements</h3>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead><tr><th>Achievement</th><th>Earned</th></tr></thead>
-                <tbody>${achievementRows || `<tr><td colspan="2">No achievements found.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-activity">
-            <h3>Activity</h3>
-            <div class="ftcharv2-statgrid">
-              <div><span>Online</span><strong>${ch.online ? "Yes" : "No"}</strong></div>
-              <div><span>Total Kills</span><strong>${esc(ch.totalKills || 0)}</strong></div>
-              <div><span>Today Kills</span><strong>${esc(ch.todayKills || 0)}</strong></div>
-              <div><span>Zone</span><strong>${esc(ch.zone || 0)}</strong></div>
-              <div><span>Map</span><strong>${esc(ch.map || 0)}</strong></div>
-              <div><span>XP</span><strong>${esc(ch.xp || 0)}</strong></div>
-            </div>
-          </div>
-
-          <div class="ftcharv2-panel" id="tab-forums">
-            <h3>Forums</h3>
-            <p>Forum posts, comments, bug reports, and player discussions will appear here once the community system is built.</p>
-          </div>
-
-          <a class="btn secondary" href="/armory/characters">Back to Characters</a>
-        </section>
-      </main>
-
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="/modelviewer/live/viewer/viewer.min.js"></script>
-<script type="module">
-  import { generateModels, findItemsInEquipments } from "/vendor/wow-model-viewer/index.js?v=chestfix1";
-
-  window.CONTENT_PATH = "/modelviewer/live/";
-  window.WOTLK_TO_RETAIL_DISPLAY_ID_API = "/wotlk-items";
-
-  const box = document.getElementById("ftmodel_3d");
-  const status = document.getElementById("ftmodel-status");
-
-  async function loadFrozenThroneModel() {
-    try {
-      const realm = box.dataset.realm || "main";
-      const guid = box.dataset.guid;
-      const character = await fetch("/api/armory-viewer/" + realm + "/" + guid).then(r => r.json());
-
-      if (character.equipments) character.items = await findItemsInEquipments(character.equipments);
-
-      const viewer = await generateModels(1.25, "#ftmodel_3d", character, "live");
-      box.classList.add("loaded");
-      window.ftArmoryViewer = viewer;
-
-      function setFrozenView() {
-        viewer.setDistance(4.15);
-        viewer.setAzimuth(0);
-        viewer.setZenith(1.28);
-      }
-
-      setFrozenView();
-      document.getElementById("ftmodel-reset")?.addEventListener("click", setFrozenView);
-      setInterval(() => { try { viewer.setZenith(1.28); } catch(e) {} }, 300);
-      status.textContent = "";
-    } catch (err) {
-      console.error(err);
-      status.textContent = "3D character failed to load.";
-    }
-  }
-
-  document.querySelectorAll(".ftcharv2-tabs button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".ftcharv2-tabs button").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".ftcharv2-panel").forEach(p => p.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    const view = buildCharacterProfileView(data.character, {
+      equipped: data.equipped,
+      inventory: data.inventory,
+      helpers: { raceName, className }
     });
-  });
 
-  loadFrozenThroneModel();
-</script>
-    `);
+    view.guild = data.guild || null;
+    view.realm = realm;
+    view.images = view.images || {};
+    view.images.realm = realm.key;
+    view.images.guid = guid;
+    view.images.manifestUrl = `/api/armory-viewer/${realm.key}/${guid}`;
+
+    render(req, res, `${data.character.name} - FrozenThrone Character Database`, renderCharacterV3(view));
   } catch (err) {
-    console.error(err);
-    render(req, res, "Armory Error", errorCard("Armory character page failed. Check website.log for the SQL error."));
+    console.error("Armory V3 character route failed", err);
+    render(req, res, "Character Database Error", errorCard("Character database page failed. Check website.log for details."));
+  } finally {
+    try { if (charConn) await charConn.end(); } catch {}
+    try { if (worldConn) await worldConn.end(); } catch {}
   }
 });
 

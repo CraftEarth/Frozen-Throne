@@ -4948,3 +4948,17 @@ main.container > section:first-of-type {
 #v3-live-character #model_3d {
   transform: none !important;
 }
+
+/* Character Database V3 public route polish */
+.v3-live-character {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.v3-live-character.loaded ~ .v3-character-fallback {
+  display: none !important;
+}
+
+.v3-paper-model {
+  border: 1px solid rgba(105, 200, 255, .22) !important;
+}

@@ -104,6 +104,9 @@ function renderPaperDoll(items = [], images = {}) {
           <div class="v3-model-glow"></div>
           <div class="v3-paper-left">${leftSlots}</div>
           <div class="v3-live-character" id="v3-live-character"
+               data-realm="${esc(images.realm || "main")}"
+               data-guid="${esc(images.guid || "")}"
+               data-manifest-url="${esc(images.manifestUrl || "")}"
                data-race="${esc(images.raceId || images.race || 1)}"
                data-gender="${esc(images.gender || 0)}"
                data-class="${esc(images.classId || images.class || 2)}">
@@ -457,6 +460,9 @@ function renderCharacterV3(view) {
         });
       </script>
 
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+      <script src="/modelviewer/live/viewer/viewer.min.js"></script>
+      <script type="module" src="/js/armory-live-model.js"></script>
     </main>
   `;
 }

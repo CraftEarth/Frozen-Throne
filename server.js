@@ -32,6 +32,7 @@ app.use("/css", express.static(path.join(__dirname, "public/css")));
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use("/renders", express.static(path.join(__dirname, "public/renders")));
 app.use("/vendor", express.static(path.join(__dirname, "public/vendor")));
+app.use("/js", express.static(path.join(__dirname, "public/js")));
 app.use("/dev", express.static(path.join(__dirname, "public/dev")));
 
 
