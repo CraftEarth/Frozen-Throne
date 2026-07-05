@@ -19,72 +19,52 @@ module.exports = function registerArmoryRoutes(app, tools) {
     itemQualityName
   } = tools;
 
-app.get(["/armory", "/database"], async (req, res) => {
-  const tab = String(req.query.tab || "characters").toLowerCase();
+  function databaseTabs(active = "characters") {
+    const tabs = [
+      ["characters", "Characters", "/armory/characters"],
+      ["items", "Items", "/armory/items"],
+      ["npcs", "NPCs", "/armory/npcs"],
+      ["quests", "Quests", "/armory/quests"],
+      ["spells", "Spells", "/armory/spells"],
+      ["mounts", "Mounts", "/armory/mounts"],
+      ["titles", "Titles", "/armory/titles"],
+      ["achievements", "Achievements", "/armory/achievements"]
+    ];
 
-  const tabs = [
-    ["characters", "Characters"],
-    ["items", "Items"],
-    ["npcs", "NPCs"],
-    ["quests", "Quests"],
-    ["spells", "Spells"],
-    ["mounts", "Mounts"],
-    ["titles", "Titles"],
-    ["achievements", "Achievements"]
-  ];
+    return `<div class="ft-tabs">${tabs.map(([key, label, href]) =>
+      `<a class="${active === key ? "active" : ""}" href="${href}">${label}</a>`
+    ).join("")}</div>`;
+  }
 
-  const tabbar = tabs.map(([key, label]) =>
-    `<a class="${tab === key ? "active" : ""}" href="/armory?tab=${key}">${label}</a>`
-  ).join("");
+  function databaseFrame(active, title, description, content) {
+    return `
+      <main class="ft-shell database-page">
+        <section class="ft-frame">
+          <div class="ft-head">
+            <p class="eyebrow">FrozenThrone Database</p>
+            <h1>${esc(title)}</h1>
+            <p>${esc(description)}</p>
+          </div>
+          ${databaseTabs(active)}
+          <div class="ft-panel">${content}</div>
+        </section>
+      </main>
+    `;
+  }
 
-  const panels = {
-    characters: `
-      <div class="db-search-row">
-        <h2>Characters</h2>
-        <a class="db-action" href="/armory/characters">Open Character Browser</a>
-      </div>
-      <div class="db-grid">
-        <a class="db-tile" href="/armory/characters"><h3>Player Characters</h3><p>Browse level, race, class, guild, online status, and gear.</p></a>
-        <a class="db-tile" href="/armory/main/7"><h3>Live 3D Character Sheet</h3><p>Open the new paper doll profile page.</p></a>
-      </div>
-    `,
-    items: `
-      <div class="db-search-row"><h2>Items</h2><a class="db-action" href="/armory/items">Search Items</a></div>
-      <div class="db-grid"><a class="db-tile" href="/armory/items"><h3>Item Database</h3><p>Search weapons, armor, bags, consumables, and custom items.</p></a></div>
-    `,
-    npcs: `
-      <div class="db-search-row"><h2>NPCs</h2><a class="db-action" href="/armory/npcs">Search NPCs</a></div>
-      <div class="db-grid"><a class="db-tile" href="/armory/npcs"><h3>NPC Database</h3><p>Search vendors, creatures, quest NPCs, trainers, and loot sources.</p></a></div>
-    `,
-    quests: `
-      <div class="db-search-row"><h2>Quests</h2><a class="db-action" href="/armory/quests">Search Quests</a></div>
-      <div class="db-grid"><a class="db-tile" href="/armory/quests"><h3>Quest Database</h3><p>Search quest titles, IDs, rewards, objectives, starters, and enders.</p></a></div>
-    `,
-    spells: `<div class="db-grid"><div class="db-tile"><h3>Spell Database</h3><p>Coming soon.</p></div></div>`,
-    mounts: `<div class="db-grid"><div class="db-tile"><h3>Mount Database</h3><p>Coming soon.</p></div></div>`,
-    titles: `<div class="db-grid"><div class="db-tile"><h3>Title Database</h3><p>Coming soon.</p></div></div>`,
-    achievements: `<div class="db-grid"><div class="db-tile"><h3>Achievement Database</h3><p>Coming soon.</p></div></div>`
-  };
 
-  render(req, res, "FrozenThrone Database", `
-    <main class="ft-shell">
-      <section class="ft-frame">
-        <div class="ft-db-head">
-          <p class="eyebrow">FrozenThrone Database</p>
-          <h1>Game Database</h1>
-          <p>Browse live realm data in one square old-school database frame.</p>
-        </div>
+app.get("/armory", (req, res, next) => {
 
-        <div class="ft-section-tabs">${tabbar}</div>
+  if (req.query.tab === "characters") return res.redirect("/armory/characters");
 
-        <div class="ft-panel">
-          ${panels[tab] || panels.characters}
-        </div>
-      </section>
-    </main>
-  `);
+  return next();
+
 });
 
+app.get(["/armory", "/database"], async (req, res) => {
+  if (req.query.tab === "characters") return res.redirect("/armory/characters");
+  return res.redirect("/armory/characters");
+});
 
 app.get("/armory/characters", async (req, res) => {
   try {
@@ -141,25 +121,21 @@ app.get("/armory/characters", async (req, res) => {
       `);
     }
 
-    render(req, res, "Armory", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Database</p>
-            <h1>Characters</h1>
-            <p>Browse player profiles, gear, race, class, level, and online status.</p>
+    render(req, res, "Characters Database", databaseFrame(
+      "characters",
+      "Characters",
+      "Browse player profiles, gear, race, class, level, and online status.",
+      `
+        <form class="ft-search" method="GET" action="/armory/characters">
+          <div>
+            <label>Search Character Name</label><br>
+            <input name="search" value="${esc(search)}" placeholder="Frozen, Noodle, Zara...">
           </div>
-          <div class="card form">
-            <form method="GET" action="/armory/characters">
-              <label>Search Character Name</label>
-              <input name="search" value="${esc(search)}" placeholder="Frozen, Noodle, Zara...">
-              <button class="btn" type="submit">Search Armory</button>
-            </form>
-          </div>
-          <div class="grid">${cards.join("")}</div>
-        </section>
-      </main>
-    `);
+          <button class="ft-btn" type="submit">Search</button>
+        </form>
+        <div class="database-results">${cards.join("")}</div>
+      `
+    ));
   } catch (err) {
     console.error(err);
     render(req, res, "Armory Error", errorCard("Armory failed to load. Check website.log for the SQL error."));

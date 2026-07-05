@@ -405,6 +405,7 @@ function render(req, res, title, body, options = {}) {
   <title>${esc(fullTitle)}</title>
   ${seoMeta}
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/frozen-ui.css">
 <script>
 function copyAdminText(text) {
   navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
@@ -489,7 +490,7 @@ app.get("/forums", (req, res) => render(req, res, "Forums", `<main class="ft-she
 
 app.get("/database", (req, res) => res.redirect("/armory"));
 
-app.get(["/database", "/armory"], (req, res) => {
+app.get(["/__legacy_database", "/__legacy_armory"], (req, res) => {
   const tab = String(req.query.tab || "characters").toLowerCase();
 
   const tabs = [

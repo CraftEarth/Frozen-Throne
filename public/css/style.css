@@ -5381,3 +5381,184 @@ main.container > section:first-of-type {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===============================
+   FrozenThrone Unified UI System
+   =============================== */
+
+:root {
+  --ft-bg: rgba(0, 10, 18, .88);
+  --ft-bg-2: rgba(2, 18, 32, .92);
+  --ft-line: rgba(93,188,255,.34);
+  --ft-line-bright: rgba(125,215,255,.55);
+  --ft-blue: #9edcff;
+  --ft-text: #e9f8ff;
+  --ft-muted: #a9c4d6;
+  --ft-row: rgba(255,255,255,.035);
+  --ft-row-hover: rgba(45,145,210,.16);
+}
+
+/* Main app shell */
+.container,
+.ft-shell,
+.charv3-wrap {
+  max-width: 1180px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Square thin tab language everywhere */
+.nav-links a,
+.ft-section-tabs a,
+.charv3-tabs a {
+  border-radius: 0 !important;
+  border-color: var(--ft-line) !important;
+  background: linear-gradient(to bottom, rgba(13,50,77,.96), rgba(3,18,31,.96)) !important;
+  color: var(--ft-text) !important;
+  text-shadow: 0 1px 2px #000 !important;
+}
+
+.nav-links a:hover,
+.ft-section-tabs a:hover,
+.ft-section-tabs a.active,
+.charv3-tabs a:hover,
+.charv3-tabs a.active {
+  background: linear-gradient(to bottom, #0b72aa, #063955) !important;
+  color: #fff !important;
+}
+
+/* Database page only */
+.database-page {
+  max-width: 1180px !important;
+  padding: 0 14px 40px !important;
+}
+
+.database-page .ft-frame {
+  border: 1px solid var(--ft-line) !important;
+  background: var(--ft-bg) !important;
+  box-shadow: 0 0 24px rgba(0,120,190,.12) !important;
+}
+
+.database-page .ft-db-head {
+  padding: 18px 22px !important;
+  min-height: 110px !important;
+  background:
+    linear-gradient(to right, rgba(0,10,18,.96), rgba(0,20,35,.72)),
+    url("/images/frozenthrone-bg.jpeg") center / cover no-repeat !important;
+  border-bottom: 1px solid var(--ft-line) !important;
+}
+
+.database-page .ft-db-head h1 {
+  font-size: 32px !important;
+  margin: 5px 0 8px !important;
+  color: var(--ft-blue) !important;
+}
+
+.database-page .ft-db-head p {
+  font-size: 15px !important;
+  color: var(--ft-muted) !important;
+}
+
+.database-page .ft-section-tabs a {
+  padding: 9px 12px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+.database-page .ft-panel {
+  padding: 14px !important;
+}
+
+/* Database compact tiles */
+.database-page .db-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.database-page .db-tile {
+  min-height: unset !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--ft-line) !important;
+  background: rgba(0, 11, 20, .82) !important;
+}
+
+.database-page .db-tile h3 {
+  font-size: 19px !important;
+  margin: 0 0 5px !important;
+  color: var(--ft-blue) !important;
+}
+
+.database-page .db-tile p {
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+  color: var(--ft-muted) !important;
+}
+
+/* FrozenThrone database tables */
+.ft-data-table,
+.data-table,
+.rank-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  background: rgba(0, 8, 15, .85) !important;
+  font-size: 13px !important;
+}
+
+.ft-data-table th,
+.ft-data-table td,
+.data-table th,
+.data-table td,
+.rank-table th,
+.rank-table td {
+  padding: 7px 9px !important;
+  border-bottom: 1px solid rgba(93,188,255,.16) !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+}
+
+.ft-data-table th,
+.data-table th,
+.rank-table th {
+  background: rgba(255,255,255,.09) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.ft-data-table tr:nth-child(even),
+.data-table tr:nth-child(even),
+.rank-table tr:nth-child(even) {
+  background: var(--ft-row) !important;
+}
+
+.ft-data-table tr:hover,
+.data-table tr:hover,
+.rank-table tr:hover {
+  background: var(--ft-row-hover) !important;
+}
+
+.item-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  vertical-align: middle !important;
+  margin-right: 7px !important;
+}
+
+@media (max-width: 760px) {
+  .database-page .db-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .database-page .ft-db-head h1 {
+    font-size: 28px !important;
+  }
+
+  .database-page .ft-section-tabs a {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    font-size: 13px !important;
+  }
+}
