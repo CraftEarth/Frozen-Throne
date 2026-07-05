@@ -31,7 +31,7 @@ module.exports = function registerArmoryRoutes(app, tools) {
       ["achievements", "Achievements", "/armory/achievements"]
     ];
 
-    return `<div class="ft-tabs">${tabs.map(([key, label, href]) =>
+    return `<div class="ft-section-tabs">${tabs.map(([key, label, href]) =>
       `<a class="${active === key ? "active" : ""}" href="${href}">${label}</a>`
     ).join("")}</div>`;
   }
@@ -40,7 +40,7 @@ module.exports = function registerArmoryRoutes(app, tools) {
     return `
       <main class="ft-shell database-page">
         <section class="ft-frame">
-          <div class="ft-head">
+          <div class="ft-db-head">
             <p class="eyebrow">FrozenThrone Database</p>
             <h1>${esc(title)}</h1>
             <p>${esc(description)}</p>
