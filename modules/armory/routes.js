@@ -319,6 +319,251 @@ app.get("/armory/quests", async (req, res) => {
   }
 });
 
+
+app.get("/armory/spells", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+
+  try {
+    const conn = await worldDb();
+    let rows = [];
+
+    if (q && /^\d+$/.test(q)) {
+      [rows] = await conn.execute(
+        `SELECT Id AS ID, SpellName AS name, SpellLevel, BaseLevel, SchoolMask, DmgClass
+         FROM spell_dbc
+         WHERE Id = ?
+         LIMIT 100`,
+        [Number(q)]
+      );
+    } else if (q) {
+      [rows] = await conn.execute(
+        `SELECT Id AS ID, SpellName AS name, SpellLevel, BaseLevel, SchoolMask, DmgClass
+         FROM spell_dbc
+         WHERE SpellName LIKE ?
+         ORDER BY ID ASC
+         LIMIT 100`,
+        [`%${q}%`]
+      );
+    } else {
+      [rows] = await conn.execute(
+        `SELECT Id AS ID, SpellName AS name, SpellLevel, BaseLevel, SchoolMask, DmgClass
+         FROM spell_dbc
+         WHERE SpellName IS NOT NULL AND SpellName <> ''
+         ORDER BY ID ASC
+         LIMIT 100`
+      );
+    }
+
+    await conn.end();
+
+    const resultRows = rows.map(sp => `
+      <tr>
+        <td><strong>${esc(sp.name || "Unnamed Spell")}</strong></td>
+        <td>${esc(sp.ID)}</td>
+        <td>${esc(sp.SpellLevel || 0)}</td>
+        <td>${esc(sp.BaseLevel || 0)}</td>
+        <td>${esc(sp.SchoolMask || 0)}</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Spell Database", databaseFrame("spells", "Spells", "Search spell IDs, names, and ranks from the Wrath database.", `
+      <form class="ft-search" method="GET" action="/armory/spells">
+        <div><label>Spell ID or Name</label><br><input name="q" value="${esc(q)}" placeholder="Fireball, Death Coil, 49998"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/spells">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Spells"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Spell</th><th>ID</th><th>Spell Level</th><th>Base Level</th><th>School</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="5">No spells found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
+  } catch (err) {
+    console.error("public spell db failed", err);
+    render(req, res, "Spell Error", errorCard("Spell database failed. spell_dbc may be missing or named differently."));
+  }
+});
+
+app.get("/armory/mounts", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+
+  try {
+    const conn = await worldDb();
+    let rows = [];
+
+    if (q && /^\d+$/.test(q)) {
+      [rows] = await conn.execute(
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, displayid
+         FROM item_template
+         WHERE entry = ? AND (class = 15 OR name LIKE '%Mount%' OR name LIKE '%Steed%' OR name LIKE '%Drake%' OR name LIKE '%Tiger%' OR name LIKE '%Horse%')
+         LIMIT 100`,
+        [Number(q)]
+      );
+    } else if (q) {
+      [rows] = await conn.execute(
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, displayid
+         FROM item_template
+         WHERE (name LIKE ?)
+           AND (class = 15 OR name LIKE '%Mount%' OR name LIKE '%Steed%' OR name LIKE '%Drake%' OR name LIKE '%Tiger%' OR name LIKE '%Horse%')
+         ORDER BY ItemLevel DESC, entry ASC
+         LIMIT 100`,
+        [`%${q}%`]
+      );
+    } else {
+      [rows] = await conn.execute(
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, displayid
+         FROM item_template
+         WHERE class = 15
+            OR name LIKE '%Mount%'
+            OR name LIKE '%Steed%'
+            OR name LIKE '%Drake%'
+            OR name LIKE '%Tiger%'
+            OR name LIKE '%Horse%'
+         ORDER BY entry ASC
+         LIMIT 100`
+      );
+    }
+
+    await conn.end();
+
+    const resultRows = rows.map(m => `
+      <tr>
+        <td><img class="item-icon" src="${itemIconUrl(m.displayid)}" alt=""> <strong>${esc(m.name || "Unnamed Mount")}</strong></td>
+        <td>${esc(m.entry)}</td>
+        <td>${esc(itemQualityName(m.Quality))}</td>
+        <td>${esc(m.ItemLevel || 0)}</td>
+        <td>${esc(m.RequiredLevel || 0)}</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Mount Database", databaseFrame("mounts", "Mounts", "Browse mount items and searchable ride rewards from item_template.", `
+      <form class="ft-search" method="GET" action="/armory/mounts">
+        <div><label>Mount Item ID or Name</label><br><input name="q" value="${esc(q)}" placeholder="Invincible, Drake, Horse, 50818"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/mounts">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Mounts"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Mount</th><th>Entry</th><th>Quality</th><th>iLvl</th><th>Req</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="5">No mounts found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
+  } catch (err) {
+    console.error("public mount db failed", err);
+    render(req, res, "Mount Error", errorCard("Mount database failed."));
+  }
+});
+
+
+
+app.get("/armory/achievements", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+
+  try {
+    const conn = await worldDb();
+    let rows = [];
+
+    if (q && /^\d+$/.test(q)) {
+      [rows] = await conn.execute(
+        `SELECT ID, points, mapID, requiredFaction, flags, count, refAchievement
+         FROM achievement_dbc
+         WHERE ID = ?
+         LIMIT 100`,
+        [Number(q)]
+      );
+    } else {
+      [rows] = await conn.execute(
+        `SELECT ID, points, mapID, requiredFaction, flags, count, refAchievement
+         FROM achievement_dbc
+         ORDER BY ID ASC
+         LIMIT 100`
+      );
+    }
+
+    await conn.end();
+
+    const resultRows = rows.map(a => `
+      <tr>
+        <td><strong>Achievement #${esc(a.ID)}</strong></td>
+        <td>${esc(a.ID)}</td>
+        <td>${esc(a.points || 0)}</td>
+        <td>${esc(a.mapID)}</td>
+        <td>${esc(a.requiredFaction)}</td>
+        <td>${esc(a.count || 0)}</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Achievement Database", databaseFrame("achievements", "Achievements", "Browse achievement IDs, points, maps, factions, and counters.", `
+      <form class="ft-search" method="GET" action="/armory/achievements">
+        <div><label>Achievement ID</label><br><input name="q" value="${esc(q)}" placeholder="6, 13, 2144"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/achievements">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Achievements"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Achievement</th><th>ID</th><th>Points</th><th>Map</th><th>Faction</th><th>Count</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="6">No achievements found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
+  } catch (err) {
+    console.error("public achievement db failed", err);
+    render(req, res, "Achievement Error", errorCard("Achievement database failed."));
+  }
+});
+
+
+
+app.get("/armory/titles", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+
+  try {
+    const conn = await worldDb();
+    let rows = [];
+
+    if (q && /^\d+$/.test(q)) {
+      [rows] = await conn.execute(
+        `SELECT alliance_id, horde_id
+         FROM player_factionchange_titles
+         WHERE alliance_id = ? OR horde_id = ?
+         ORDER BY alliance_id ASC
+         LIMIT 100`,
+        [Number(q), Number(q)]
+      );
+    } else {
+      [rows] = await conn.execute(
+        `SELECT alliance_id, horde_id
+         FROM player_factionchange_titles
+         ORDER BY alliance_id ASC
+         LIMIT 100`
+      );
+    }
+
+    await conn.end();
+
+    const resultRows = rows.map(t => `
+      <tr>
+        <td><strong>Alliance Title #${esc(t.alliance_id)}</strong></td>
+        <td>${esc(t.alliance_id)}</td>
+        <td><strong>Horde Title #${esc(t.horde_id)}</strong></td>
+        <td>${esc(t.horde_id)}</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Title Database", databaseFrame("titles", "Titles", "Browse faction-change title mappings from your current world database.", `
+      <form class="ft-search" method="GET" action="/armory/titles">
+        <div><label>Title ID</label><br><input name="q" value="${esc(q)}" placeholder="1, 15, 28"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/titles">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Title Mappings"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Alliance Title</th><th>Alliance ID</th><th>Horde Title</th><th>Horde ID</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="4">No titles found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
+  } catch (err) {
+    console.error("public title db failed", err);
+    render(req, res, "Title Error", errorCard("Title database failed."));
+  }
+});
+
+
 app.get("/armory/:realm/:guid", async (req, res) => {
   const realm = getRealm(req.params.realm);
   const guid = Number(req.params.guid);
