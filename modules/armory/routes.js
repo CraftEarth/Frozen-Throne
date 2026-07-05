@@ -149,34 +149,27 @@ app.get("/armory/items", async (req, res) => {
 
   try {
     const conn = await worldDb();
+    let rows = [];
 
-    let rows;
     if (q) {
       if (/^\d+$/.test(q)) {
         [rows] = await conn.execute(
           `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
-           FROM item_template
-           WHERE entry = ?
-           ORDER BY ItemLevel DESC, entry ASC
-           LIMIT 100`,
+           FROM item_template WHERE entry = ? LIMIT 100`,
           [Number(q)]
         );
       } else {
         [rows] = await conn.execute(
           `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
-           FROM item_template
-           WHERE name LIKE ?
-           ORDER BY ItemLevel DESC, entry ASC
-           LIMIT 100`,
+           FROM item_template WHERE name LIKE ?
+           ORDER BY ItemLevel DESC, entry ASC LIMIT 100`,
           [`%${q}%`]
         );
       }
     } else {
       [rows] = await conn.execute(
         `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
-         FROM item_template
-         ORDER BY ItemLevel DESC, entry ASC
-         LIMIT 100`
+         FROM item_template ORDER BY ItemLevel DESC, entry ASC LIMIT 100`
       );
     }
 
@@ -184,7 +177,7 @@ app.get("/armory/items", async (req, res) => {
 
     const resultRows = rows.map(i => `
       <tr>
-        <td><a href="/armory/item/${esc(i.entry)}"><img class="item-icon" src="${itemIconUrl(i.displayid)}" alt=""> ${esc(i.name)}</a></td>
+        <td><a href="/armory/item/${esc(i.entry)}"><img class="item-icon" src="${itemIconUrl(i.displayid)}" alt=""> <strong>${esc(i.name)}</strong></a></td>
         <td>${esc(i.entry)}</td>
         <td>${esc(i.ItemLevel || 0)}</td>
         <td>${esc(i.RequiredLevel || 0)}</td>
@@ -193,120 +186,19 @@ app.get("/armory/items", async (req, res) => {
       </tr>
     `).join("");
 
-    render(req, res, "Items Database", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Database</p>
-            <h1>Items</h1>
-            <p>Browse weapons, armor, bags, consumables, custom items, vendors, drops, and ownership.</p>
-          </div>
-
-          <div class="card form">
-            <form method="GET" action="/armory/items">
-              <label>Search Item</label>
-              <input name="q" value="${esc(q)}" placeholder="Shadowmourne, Portable Hole, 900001">
-              <button class="btn" type="submit">Search</button>
-            </form>
-          </div>
-
-          <div class="card">
-            <h3>${q ? "Results" : "Top Items"}</h3>
-            <div class="table-wrap">
-              <table class="ft-table data-table">
-                <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req</th><th>Quality</th><th>Slot</th></tr></thead>
-                <tbody>${resultRows || `<tr><td colspan="6">No items found.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      </main>
-    `);
+    render(req, res, "Items Database", databaseFrame("items", "Items", "Browse weapons, armor, bags, consumables, custom items, vendors, drops, and ownership.", `
+      <form class="ft-search" method="GET" action="/armory/items">
+        <div><label>Search Item</label><br><input name="q" value="${esc(q)}" placeholder="Shadowmourne, Portable Hole, 900001"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/items">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Top Items"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req</th><th>Quality</th><th>Slot</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="6">No items found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
   } catch (err) {
     console.error("items table failed", err);
-    render(req, res, "Items Error", errorCard("Item database failed."));
-  }
-});
-
-
-app.get("/__legacy_armory_items", async (req, res) => {
-  const q = String(req.query.q || "").trim();
-
-  try {
-    const conn = await worldDb();
-    let rows = [];
-
-    if (q) {
-      if (/^\d+$/.test(q)) {
-        const [found] = await conn.execute(
-          `SELECT entry, name, Quality, ItemLevel, RequiredLevel, class, subclass, displayid
-           FROM item_template WHERE entry = ? LIMIT 100`,
-          [Number(q)]
-        );
-        rows = found;
-      } else {
-        const [found] = await conn.execute(
-          `SELECT entry, name, Quality, ItemLevel, RequiredLevel, class, subclass, displayid
-           FROM item_template WHERE name LIKE ?
-           ORDER BY ItemLevel DESC, entry ASC LIMIT 100`,
-          [`%${q}%`]
-        );
-        rows = found;
-      }
-    } else {
-      const [found] = await conn.execute(
-        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, class, subclass, displayid
-         FROM item_template
-         ORDER BY ItemLevel DESC, entry ASC
-         LIMIT 100`
-      );
-      rows = found;
-    }
-
-    await conn.end();
-
-    const resultRows = rows.map(i => `
-      <tr>
-        <td><img class="item-icon" src="${itemIconUrl(i.displayid)}" alt=""> <strong>${esc(i.name)}</strong></td>
-        <td>${esc(i.entry)}</td>
-        <td>${esc(i.ItemLevel)}</td>
-        <td>${esc(i.RequiredLevel)}</td>
-        <td>${esc(itemQualityName(i.Quality))}</td>
-      </tr>
-    `).join("");
-
-    render(req, res, "Items Database", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Database</p>
-            <h1>Items</h1>
-            <p>Search the full item database.</p>
-          </div>
-
-          <div class="card form">
-            <form method="GET" action="/armory/items">
-              <label>Item ID or Name</label>
-              <input name="q" value="${esc(q)}" placeholder="Shadowmourne, Portable Hole, 900001">
-              <button class="btn" type="submit">Search Items</button>
-              <a class="btn secondary" href="/armory">Database Home</a>
-            </form>
-          </div>
-
-          <div class="card">
-            <h3>${q ? "Results" : "Top Items"}</h3>
-            <div class="table-wrap">
-              <table class="ft-table">
-                <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req Level</th><th>Quality</th></tr></thead>
-                <tbody>${resultRows || `<tr><td colspan="5">No items found.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      </main>
-    `);
-  } catch (err) {
-    console.error("public item db failed", err);
     render(req, res, "Items Error", errorCard("Item database failed."));
   }
 });
@@ -320,29 +212,24 @@ app.get("/armory/npcs", async (req, res) => {
 
     if (q) {
       if (/^\d+$/.test(q)) {
-        const [found] = await conn.execute(
+        [rows] = await conn.execute(
           `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
            FROM creature_template WHERE entry = ? LIMIT 100`,
           [Number(q)]
         );
-        rows = found;
       } else {
-        const [found] = await conn.execute(
+        [rows] = await conn.execute(
           `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
            FROM creature_template WHERE name LIKE ? OR subname LIKE ?
            ORDER BY entry ASC LIMIT 100`,
           [`%${q}%`, `%${q}%`]
         );
-        rows = found;
       }
     } else {
-      const [found] = await conn.execute(
+      [rows] = await conn.execute(
         `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
-         FROM creature_template
-         ORDER BY entry ASC
-         LIMIT 100`
+         FROM creature_template ORDER BY entry ASC LIMIT 100`
       );
-      rows = found;
     }
 
     await conn.end();
@@ -357,31 +244,17 @@ app.get("/armory/npcs", async (req, res) => {
       </tr>
     `).join("");
 
-    render(req, res, "NPC Database", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Database</p>
-            <h1>NPCs</h1>
-            <p>Search NPCs, creatures, vendors, and quest givers.</p>
-          </div>
-
-          <div class="card form">
-            <form method="GET" action="/armory/npcs">
-              <label>NPC Entry or Name</label>
-              <input name="q" value="${esc(q)}" placeholder="900100, Quartermaster, Lich King">
-              <button class="btn" type="submit">Search NPCs</button>
-              <a class="btn secondary" href="/armory">Database Home</a>
-            </form>
-          </div>
-
-          <div class="card"><h3>${q ? "Results" : "NPCs"}</h3><div class="table-wrap"><table class="data-table">
-            <thead><tr><th>Name</th><th>Entry</th><th>Subname</th><th>Level</th><th>NPC Flags</th></tr></thead>
-            <tbody>${resultRows || `<tr><td colspan="5">No NPCs found.</td></tr>`}</tbody>
-          </table></div></div>
-        </section>
-      </main>
-    `);
+    render(req, res, "NPC Database", databaseFrame("npcs", "NPCs", "Search NPCs, creatures, vendors, trainers, and quest givers.", `
+      <form class="ft-search" method="GET" action="/armory/npcs">
+        <div><label>NPC Entry or Name</label><br><input name="q" value="${esc(q)}" placeholder="900100, Quartermaster, Lich King"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/npcs">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "NPCs"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Name</th><th>Entry</th><th>Subname</th><th>Level</th><th>NPC Flags</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="5">No NPCs found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
   } catch (err) {
     console.error("public npc db failed", err);
     render(req, res, "NPC Error", errorCard("NPC database failed."));
@@ -397,29 +270,24 @@ app.get("/armory/quests", async (req, res) => {
 
     if (q) {
       if (/^\d+$/.test(q)) {
-        const [found] = await conn.execute(
+        [rows] = await conn.execute(
           `SELECT ID, LogTitle, QuestLevel, MinLevel, QuestSortID
            FROM quest_template WHERE ID = ? LIMIT 100`,
           [Number(q)]
         );
-        rows = found;
       } else {
-        const [found] = await conn.execute(
+        [rows] = await conn.execute(
           `SELECT ID, LogTitle, QuestLevel, MinLevel, QuestSortID
            FROM quest_template WHERE LogTitle LIKE ?
            ORDER BY QuestLevel DESC, ID ASC LIMIT 100`,
           [`%${q}%`]
         );
-        rows = found;
       }
     } else {
-      const [found] = await conn.execute(
+      [rows] = await conn.execute(
         `SELECT ID, LogTitle, QuestLevel, MinLevel, QuestSortID
-         FROM quest_template
-         ORDER BY QuestLevel DESC, ID ASC
-         LIMIT 100`
+         FROM quest_template ORDER BY ID ASC LIMIT 100`
       );
-      rows = found;
     }
 
     await conn.end();
@@ -434,37 +302,22 @@ app.get("/armory/quests", async (req, res) => {
       </tr>
     `).join("");
 
-    render(req, res, "Quest Database", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Database</p>
-            <h1>Quests</h1>
-            <p>Search quests, objectives, chains, and rewards.</p>
-          </div>
-
-          <div class="card form">
-            <form method="GET" action="/armory/quests">
-              <label>Quest ID or Title</label>
-              <input name="q" value="${esc(q)}" placeholder="The Missing Diplomat, 54, Shadowmourne">
-              <button class="btn" type="submit">Search Quests</button>
-              <a class="btn secondary" href="/armory">Database Home</a>
-            </form>
-          </div>
-
-          <div class="card"><h3>${q ? "Results" : "Quests"}</h3><div class="table-wrap"><table class="data-table">
-            <thead><tr><th>Quest</th><th>ID</th><th>Level</th><th>Min Level</th><th>Sort</th></tr></thead>
-            <tbody>${resultRows || `<tr><td colspan="5">No quests found.</td></tr>`}</tbody>
-          </table></div></div>
-        </section>
-      </main>
-    `);
+    render(req, res, "Quest Database", databaseFrame("quests", "Quests", "Search quests, objectives, chains, rewards, starters, and enders.", `
+      <form class="ft-search" method="GET" action="/armory/quests">
+        <div><label>Quest ID or Title</label><br><input name="q" value="${esc(q)}" placeholder="The Missing Diplomat, 54, Shadowmourne"></div>
+        <button class="ft-btn" type="submit">Search</button>
+        <a class="ft-btn secondary" href="/armory/quests">Reset</a>
+      </form>
+      <div class="database-results"><div class="card"><h3>${q ? "Results" : "Quests"}</h3><div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Quest</th><th>ID</th><th>Level</th><th>Min Level</th><th>Sort</th></tr></thead>
+        <tbody>${resultRows || `<tr><td colspan="5">No quests found.</td></tr>`}</tbody>
+      </table></div></div></div>
+    `));
   } catch (err) {
     console.error("public quest db failed", err);
     render(req, res, "Quest Error", errorCard("Quest database failed."));
   }
 });
-
 
 app.get("/armory/:realm/:guid", async (req, res) => {
   const realm = getRealm(req.params.realm);
