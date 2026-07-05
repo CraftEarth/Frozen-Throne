@@ -143,7 +143,93 @@ app.get("/armory/characters", async (req, res) => {
 });
 
 
+
 app.get("/armory/items", async (req, res) => {
+  const q = String(req.query.q || "").trim();
+
+  try {
+    const conn = await worldDb();
+
+    let rows;
+    if (q) {
+      if (/^\d+$/.test(q)) {
+        [rows] = await conn.execute(
+          `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
+           FROM item_template
+           WHERE entry = ?
+           ORDER BY ItemLevel DESC, entry ASC
+           LIMIT 100`,
+          [Number(q)]
+        );
+      } else {
+        [rows] = await conn.execute(
+          `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
+           FROM item_template
+           WHERE name LIKE ?
+           ORDER BY ItemLevel DESC, entry ASC
+           LIMIT 100`,
+          [`%${q}%`]
+        );
+      }
+    } else {
+      [rows] = await conn.execute(
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, InventoryType, displayid
+         FROM item_template
+         ORDER BY ItemLevel DESC, entry ASC
+         LIMIT 100`
+      );
+    }
+
+    await conn.end();
+
+    const resultRows = rows.map(i => `
+      <tr>
+        <td><a href="/armory/item/${esc(i.entry)}"><img class="item-icon" src="${itemIconUrl(i.displayid)}" alt=""> ${esc(i.name)}</a></td>
+        <td>${esc(i.entry)}</td>
+        <td>${esc(i.ItemLevel || 0)}</td>
+        <td>${esc(i.RequiredLevel || 0)}</td>
+        <td>${esc(itemQualityName(i.Quality))}</td>
+        <td>${esc(i.InventoryType || "")}</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Items Database", `
+      <main class="container">
+        <section>
+          <div class="section-head">
+            <p class="eyebrow">FrozenThrone Database</p>
+            <h1>Items</h1>
+            <p>Browse weapons, armor, bags, consumables, custom items, vendors, drops, and ownership.</p>
+          </div>
+
+          <div class="card form">
+            <form method="GET" action="/armory/items">
+              <label>Search Item</label>
+              <input name="q" value="${esc(q)}" placeholder="Shadowmourne, Portable Hole, 900001">
+              <button class="btn" type="submit">Search</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>${q ? "Results" : "Top Items"}</h3>
+            <div class="table-wrap">
+              <table class="ft-table data-table">
+                <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req</th><th>Quality</th><th>Slot</th></tr></thead>
+                <tbody>${resultRows || `<tr><td colspan="6">No items found.</td></tr>`}</tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    `);
+  } catch (err) {
+    console.error("items table failed", err);
+    render(req, res, "Items Error", errorCard("Item database failed."));
+  }
+});
+
+
+app.get("/__legacy_armory_items", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
@@ -167,6 +253,14 @@ app.get("/armory/items", async (req, res) => {
         );
         rows = found;
       }
+    } else {
+      const [found] = await conn.execute(
+        `SELECT entry, name, Quality, ItemLevel, RequiredLevel, class, subclass, displayid
+         FROM item_template
+         ORDER BY ItemLevel DESC, entry ASC
+         LIMIT 100`
+      );
+      rows = found;
     }
 
     await conn.end();
@@ -199,10 +293,15 @@ app.get("/armory/items", async (req, res) => {
             </form>
           </div>
 
-          ${q ? `<div class="card"><h3>Results</h3><div class="table-wrap"><table class="data-table">
-            <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req Level</th><th>Quality</th></tr></thead>
-            <tbody>${resultRows || `<tr><td colspan="5">No items found.</td></tr>`}</tbody>
-          </table></div></div>` : ""}
+          <div class="card">
+            <h3>${q ? "Results" : "Top Items"}</h3>
+            <div class="table-wrap">
+              <table class="ft-table">
+                <thead><tr><th>Item</th><th>Entry</th><th>iLvl</th><th>Req Level</th><th>Quality</th></tr></thead>
+                <tbody>${resultRows || `<tr><td colspan="5">No items found.</td></tr>`}</tbody>
+              </table>
+            </div>
+          </div>
         </section>
       </main>
     `);
@@ -236,6 +335,14 @@ app.get("/armory/npcs", async (req, res) => {
         );
         rows = found;
       }
+    } else {
+      const [found] = await conn.execute(
+        `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
+         FROM creature_template
+         ORDER BY entry ASC
+         LIMIT 100`
+      );
+      rows = found;
     }
 
     await conn.end();
@@ -268,10 +375,10 @@ app.get("/armory/npcs", async (req, res) => {
             </form>
           </div>
 
-          ${q ? `<div class="card"><h3>Results</h3><div class="table-wrap"><table class="data-table">
+          <div class="card"><h3>${q ? "Results" : "NPCs"}</h3><div class="table-wrap"><table class="data-table">
             <thead><tr><th>Name</th><th>Entry</th><th>Subname</th><th>Level</th><th>NPC Flags</th></tr></thead>
             <tbody>${resultRows || `<tr><td colspan="5">No NPCs found.</td></tr>`}</tbody>
-          </table></div></div>` : ""}
+          </table></div></div>
         </section>
       </main>
     `);
@@ -305,6 +412,14 @@ app.get("/armory/quests", async (req, res) => {
         );
         rows = found;
       }
+    } else {
+      const [found] = await conn.execute(
+        `SELECT ID, LogTitle, QuestLevel, MinLevel, QuestSortID
+         FROM quest_template
+         ORDER BY QuestLevel DESC, ID ASC
+         LIMIT 100`
+      );
+      rows = found;
     }
 
     await conn.end();
@@ -337,10 +452,10 @@ app.get("/armory/quests", async (req, res) => {
             </form>
           </div>
 
-          ${q ? `<div class="card"><h3>Results</h3><div class="table-wrap"><table class="data-table">
+          <div class="card"><h3>${q ? "Results" : "Quests"}</h3><div class="table-wrap"><table class="data-table">
             <thead><tr><th>Quest</th><th>ID</th><th>Level</th><th>Min Level</th><th>Sort</th></tr></thead>
             <tbody>${resultRows || `<tr><td colspan="5">No quests found.</td></tr>`}</tbody>
-          </table></div></div>` : ""}
+          </table></div></div>
         </section>
       </main>
     `);
