@@ -505,6 +505,8 @@ registerArmoryRoutes(app, {
   itemQualityName
 });
 
+
+
 app.get(["/", "/index.html"], (req, res) => {
   render(req, res, "FrozenThrone | Wrath of the Lich King 3.3.5a Private Server", `<main>
   <section class="hero">
@@ -903,6 +905,17 @@ app.get("/admin/bible", requireGM, async (req, res) => {
 
 
 
+
+const CMS_CONTENT_TYPES = [
+  "News",
+  "Patch Notes",
+  "Events",
+  "Maintenance",
+  "Community Spotlight",
+  "Screenshots",
+  "Guides"
+];
+
 app.get("/admin/news", requireGM, async (req, res) => {
   const posts = readNewsPosts().sort((a, b) => Number(b.id) - Number(a.id));
 
@@ -910,24 +923,32 @@ app.get("/admin/news", requireGM, async (req, res) => {
     <tr>
       <td>${esc(post.id)}</td>
       <td><a href="/admin/news/${post.id}/edit"><strong>${esc(post.title)}</strong></a></td>
+      <td>${esc(post.type || post.category || "News")}</td>
       <td>${esc(post.status)}</td>
-      <td>${esc(post.category || "")}</td>
+      <td>${post.featured ? "⭐" : ""}</td>
+      <td>${post.pinned ? "📌" : ""}</td>
+      <td>${esc(post.tags || "")}</td>
       <td>${esc(post.createdAt || "")}</td>
-      <td><a class="btn secondary" href="/admin/news/${post.id}/edit">Edit</a></td>
+      <td>
+        <a class="btn secondary" href="/admin/news/${post.id}/edit">Edit</a>
+        <form method="POST" action="/admin/news/${post.id}/delete" style="display:inline" onsubmit="return confirm('Delete this post?');">
+          <button class="btn secondary" type="submit">Delete</button>
+        </form>
+      </td>
     </tr>
   `).join("");
 
-  render(req, res, "News Manager", `
-    <main class="container admin-control">
+  render(req, res, "Content Manager", `
+    <main class="container admin-control cms-compact">
       <section>
         <div class="section-head">
-          <p class="eyebrow">FrozenThrone CMS</p>
-          <h1>News Manager</h1>
-          <p>Create and edit public news posts without touching HTML files.</p>
+          <p class="eyebrow">FrozenThrone Content Engine</p>
+          <h1>Content Manager</h1>
+          <p>Create news, patch notes, events, maintenance posts, community spotlights, screenshots, and guides.</p>
         </div>
 
-        <div class="card highlight">
-          <a class="btn" href="/admin/news/new">+ New News Post</a>
+        <div class="card cms-toolbar">
+          <a class="btn" href="/admin/news/new">+ New Post</a>
           <a class="btn secondary" href="/admin">Back to Admin</a>
           <a class="btn secondary" href="/news">View Public News</a>
         </div>
@@ -936,8 +957,8 @@ app.get("/admin/news", requireGM, async (req, res) => {
           <h3>Posts</h3>
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Category</th><th>Date</th><th>Edit</th></tr></thead>
-              <tbody>${rows || `<tr><td colspan="6">No posts yet.</td></tr>`}</tbody>
+              <thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Status</th><th>Featured</th><th>Pinned</th><th>Tags</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody>${rows || `<tr><td colspan="9">No posts yet.</td></tr>`}</tbody>
             </table>
           </div>
         </div>
@@ -957,23 +978,35 @@ app.get(["/admin/news/new", "/admin/news/:id/edit"], requireGM, async (req, res)
         summary: "",
         body: "",
         status: "draft",
-        category: "Announcements",
+        type: "News",
+        category: "News",
+        tags: "",
         image: "/images/frozenthrone-bg.jpeg",
+        heroImage: "/images/frozenthrone-bg.jpeg",
+        pinned: false,
+        featured: false,
+        allowComments: true,
+        allowLikes: true,
         createdAt: new Date().toISOString().slice(0, 10)
       };
 
-  if (!post) return render(req, res, "News Manager", errorCard("News post not found."));
+  if (!post) return render(req, res, "Content Manager", errorCard("Post not found."));
 
-  render(req, res, "News Editor", `
-    <main class="container admin-control">
+  const selectedType = post.type || post.category || "News";
+  const typeOptions = CMS_CONTENT_TYPES.map(t =>
+    `<option value="${esc(t)}" ${selectedType === t ? "selected" : ""}>${esc(t)}</option>`
+  ).join("");
+
+  render(req, res, "Content Editor", `
+    <main class="container admin-control cms-compact">
       <section>
         <div class="section-head">
-          <p class="eyebrow">FrozenThrone CMS</p>
-          <h1>${post.id ? "Edit News Post" : "New News Post"}</h1>
-          <p>Simple editor first. WYSIWYG comes after this saves clean.</p>
+          <p class="eyebrow">FrozenThrone Content Engine</p>
+          <h1>${post.id ? "Edit Post" : "New Post"}</h1>
+          <p>Create official content for the FrozenThrone website.</p>
         </div>
 
-        <div class="card highlight">
+        <div class="card cms-editor">
           <form method="POST" action="/admin/news/save">
             <input type="hidden" name="id" value="${esc(post.id)}">
 
@@ -981,16 +1014,19 @@ app.get(["/admin/news/new", "/admin/news/:id/edit"], requireGM, async (req, res)
             <input name="title" value="${esc(post.title)}" required>
 
             <label>Slug</label>
-            <input name="slug" value="${esc(post.slug)}" placeholder="beta-realm-is-online">
+            <input name="slug" value="${esc(post.slug)}" placeholder="patch-1-0-1">
+
+            <label>Content Type</label>
+            <select name="type">${typeOptions}</select>
+
+            <label>Tags</label>
+            <input name="tags" value="${esc(post.tags || "")}" placeholder="Death Knight, Beta Realm, Icecrown">
 
             <label>Summary</label>
             <input name="summary" value="${esc(post.summary || "")}">
 
-            <label>Category</label>
-            <input name="category" value="${esc(post.category || "Announcements")}">
-
-            <label>Featured Image URL</label>
-            <input name="image" value="${esc(post.image || "")}" placeholder="/images/frozenthrone-bg.jpeg">
+            <label>Hero Image URL</label>
+            <input name="image" value="${esc(post.image || post.heroImage || "")}" placeholder="/images/frozenthrone-bg.jpeg">
 
             <label>Status</label>
             <select name="status">
@@ -999,12 +1035,19 @@ app.get(["/admin/news/new", "/admin/news/:id/edit"], requireGM, async (req, res)
             </select>
 
             <label>Date</label>
-            <input name="createdAt" value="${esc(post.createdAt || "")}" placeholder="2026-07-05">
+            <input name="createdAt" value="${esc(post.createdAt || "")}" placeholder="2026-07-06">
+
+            <div class="cms-checks">
+              <label><input type="checkbox" name="featured" value="1" ${post.featured ? "checked" : ""}> Featured story</label>
+              <label><input type="checkbox" name="pinned" value="1" ${post.pinned ? "checked" : ""}> Pin to top</label>
+              <label><input type="checkbox" name="allowComments" value="1" ${post.allowComments !== false ? "checked" : ""}> Allow comments</label>
+              <label><input type="checkbox" name="allowLikes" value="1" ${post.allowLikes !== false ? "checked" : ""}> Allow likes</label>
+            </div>
 
             <label>Body HTML</label>
             <textarea name="body" rows="14">${esc(post.body || "")}</textarea>
 
-            <button class="btn" type="submit">Save News Post</button>
+            <button class="btn" type="submit">Save Post</button>
             <a class="btn secondary" href="/admin/news">Cancel</a>
           </form>
         </div>
@@ -1017,6 +1060,7 @@ app.post("/admin/news/save", requireGM, async (req, res) => {
   const posts = readNewsPosts();
   const id = Number(req.body.id);
   const nextId = posts.length ? Math.max(...posts.map(p => Number(p.id) || 0)) + 1 : 1;
+  const type = CMS_CONTENT_TYPES.includes(req.body.type) ? req.body.type : "News";
 
   const post = {
     id: id || nextId,
@@ -1025,15 +1069,30 @@ app.post("/admin/news/save", requireGM, async (req, res) => {
     summary: String(req.body.summary || "").trim(),
     body: String(req.body.body || "").trim(),
     status: req.body.status === "published" ? "published" : "draft",
-    category: String(req.body.category || "Announcements").trim(),
+    type,
+    category: type,
+    tags: String(req.body.tags || "").trim(),
     image: String(req.body.image || "").trim(),
-    createdAt: String(req.body.createdAt || new Date().toISOString().slice(0, 10)).trim()
+    heroImage: String(req.body.image || "").trim(),
+    featured: req.body.featured === "1",
+    pinned: req.body.pinned === "1",
+    allowComments: req.body.allowComments === "1",
+    allowLikes: req.body.allowLikes === "1",
+    createdAt: String(req.body.createdAt || new Date().toISOString().slice(0, 10)).trim(),
+    updatedAt: new Date().toISOString()
   };
 
   const idx = posts.findIndex(p => Number(p.id) === post.id);
   if (idx >= 0) posts[idx] = post;
   else posts.push(post);
 
+  writeNewsPosts(posts);
+  res.redirect("/admin/news");
+});
+
+app.post("/admin/news/:id/delete", requireGM, async (req, res) => {
+  const id = Number(req.params.id);
+  const posts = readNewsPosts().filter(p => Number(p.id) !== id);
   writeNewsPosts(posts);
   res.redirect("/admin/news");
 });
@@ -3460,13 +3519,52 @@ app.get(["/shop", "/shop.html"], requireLogin, (req, res) => {
 });
 
 app.get("/vote", requireLogin, (req, res) => {
-  render(req, res, "Vote", `<main class="container"><section>
-    <div class="section-head"><p class="eyebrow">Vote System Foundation</p><h1>Vote Rewards</h1><p>This page is protected by account login and ready for TopG vote cooldowns and token rewards.</p></div>
-    <div class="grid grid-2">
-      <div class="card highlight"><h3>TopG Vote</h3><p class="muted">Voting link and callback tracking will be connected here.</p><a class="btn secondary disabled">Coming Soon</a></div>
-      <div class="card"><h3>Reward Balance</h3><p class="muted">Vote token balance will show here after the reward table is created.</p><div class="stat"><strong>Soon</strong><span>Vote Tokens</span></div></div>
-    </div>
-  </section></main>`);
+  render(req, res, "Vote", `
+    <main class="container">
+      <section>
+        <div class="section-head">
+          <p class="eyebrow">FrozenThrone Voting</p>
+          <h1>Vote Rewards</h1>
+          <p>Support FrozenThrone by voting every 6 hours and earn rewards automatically.</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card highlight">
+            <h2>🎁 Every Vote Rewards You With</h2>
+            <ul class="clean-list">
+              <li>🪙 1 Vote Token</li>
+              <li>💰 1 Gold</li>
+              <li>❄️ 5 Emblems of Frost</li>
+            </ul>
+            <p class="muted">You may vote once every <strong>6 hours</strong>.</p>
+            <a class="btn gold" href="https://topg.org/wow-private-servers/server-683511" target="_blank">Vote on TopG</a>
+          </div>
+
+          <div class="card">
+            <h2>🔥 Vote Streak</h2>
+            <div class="stat">
+              <strong>0</strong>
+              <span>Current Streak</span>
+            </div>
+            <hr>
+            <h3>Next Milestone</h3>
+            <p>🏆 <strong>150 Votes</strong><br>Rare Exclusive Mount</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>How Voting Works</h2>
+          <ol>
+            <li>Login to your FrozenThrone account.</li>
+            <li>Click the Vote button.</li>
+            <li>Vote on TopG.</li>
+            <li>Return here.</li>
+            <li>Claim your rewards.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+  `);
 });
 
 

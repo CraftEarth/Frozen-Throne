@@ -5628,3 +5628,86 @@ main.container > section:first-of-type {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Thin CMS admin layout */
+.admin-control .cms-compact {
+  padding: 14px !important;
+}
+
+.admin-control .cms-compact .section-head {
+  padding: 18px 16px !important;
+  text-align: left !important;
+}
+
+.admin-control .cms-toolbar {
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+.admin-control .cms-editor {
+  padding: 14px !important;
+}
+
+.admin-control .cms-editor form {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.admin-control .cms-editor label {
+  margin: 8px 0 4px !important;
+  font-size: 13px !important;
+}
+
+.admin-control .cms-editor input,
+.admin-control .cms-editor select,
+.admin-control .cms-editor textarea {
+  min-height: 36px !important;
+  margin-bottom: 6px !important;
+}
+
+.admin-control .cms-checks {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 8px 0 12px !important;
+}
+
+.admin-control .cms-checks label {
+  background: rgba(0,8,16,.65) !important;
+  border: 1px solid rgba(93,188,255,.18) !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 850px) {
+  .admin-control .cms-checks {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* CMS table action buttons */
+.admin-control .data-table td:last-child {
+  white-space: nowrap !important;
+  width: 150px !important;
+}
+
+.admin-control .data-table td:last-child .btn,
+.admin-control .data-table td:last-child button.btn {
+  display: inline-block !important;
+  width: auto !important;
+  min-width: 58px !important;
+  padding: 6px 10px !important;
+  margin: 0 4px 0 0 !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+.admin-control .data-table td:last-child form {
+  display: inline-block !important;
+  margin: 0 !important;
+}
