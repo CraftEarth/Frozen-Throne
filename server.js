@@ -21,6 +21,7 @@ const crypto = require("crypto");
 const path = require("path");
 const { buildMeta } = require("./modules/seo/seo");
 const registerArmoryRoutes = require("./modules/armory/routes");
+const registerDocsRoutes = require("./modules/docs/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -438,8 +439,6 @@ function copyAdminText(text) {
           <a href="/download">Download</a>
           <a href="/vote">Vote</a>
           <a href="/shop">Shop</a>
-          <a href="/players">Players</a>
-          <a href="/npc">NPC</a>
           <a href="/forums">Forums</a>
         `
       }
@@ -504,6 +503,14 @@ registerArmoryRoutes(app, {
   itemIconUrl,
   itemQualityName
 });
+
+registerDocsRoutes(app, {
+  render,
+  requireGM,
+  esc,
+  errorCard
+});
+
 
 
 

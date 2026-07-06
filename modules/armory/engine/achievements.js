@@ -1,7 +1,11 @@
+const { getAchievementName } = require("../../dbc/achievements");
+
 function buildAchievement(achievement = {}) {
+  const id = Number(achievement.id || achievement.achievement || achievement.ID || 0);
+
   return {
-    id: achievement.id || achievement.achievement || 0,
-    name: achievement.name || `Achievement #${achievement.id || achievement.achievement || 0}`,
+    id,
+    name: achievement.name || getAchievementName(id),
     description: achievement.description || "",
     points: Number(achievement.points || 0),
     icon: achievement.icon || "",
