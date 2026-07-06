@@ -561,15 +561,84 @@ app.get(["/features", "/features.html"], (req, res) => {
   </section></main>`);
 });
 
+
+const NEWS_FILE = path.join(__dirname, "data/news/posts.json");
+
+function readNewsPosts() {
+  try {
+    return JSON.parse(fs.readFileSync(NEWS_FILE, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeNewsPosts(posts) {
+  fs.mkdirSync(path.dirname(NEWS_FILE), { recursive: true });
+  fs.writeFileSync(NEWS_FILE, JSON.stringify(posts, null, 2));
+}
+
+function newsSlug(input) {
+  return String(input || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "news-post";
+}
+
 app.get(["/news", "/news.html"], (req, res) => {
-  render(req, res, "News", `<main class="container"><section>
-    <div class="section-head"><h1>FrozenThrone News</h1><p>Updates from the FrozenThrone realm.</p></div>
-    <div class="grid grid-2">
-      <article class="card news-card"><img src="/images/frozenthrone-bg.jpeg" alt="FrozenThrone"><p class="meta">June 2026</p><h3>Beta Realm Is Online</h3><p class="muted">FrozenThrone now has a separate Beta realm for testing new features without risking production.</p><a class="btn secondary" href="/features">View Features</a></article>
-      <article class="card"><p class="meta">Website Upgrade</p><h3>Account Login Foundation</h3><p class="muted">The static pages have been replaced with a dynamic account-aware website foundation.</p><a class="btn secondary" href="/account">Account Panel</a></article>
-    </div>
-  </section></main>`);
+  const posts = readNewsPosts()
+    .filter(p => p.status === "published")
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+
+  const cards = posts.map(post => `
+    <article class="card news-card">
+      ${post.image ? `<img src="${esc(post.image)}" alt="${esc(post.title)}">` : ""}
+      <p class="meta">${esc(post.category || "News")} · ${esc(post.createdAt || "")}</p>
+      <h3>${esc(post.title)}</h3>
+      <p class="muted">${esc(post.summary || "")}</p>
+      <a class="btn secondary" href="/news/${esc(post.slug)}">Read More</a>
+    </article>
+  `).join("");
+
+  render(req, res, "News", `
+    <main class="container">
+      <section>
+        <div class="section-head">
+          <h1>FrozenThrone News</h1>
+          <p>Updates from the FrozenThrone realm.</p>
+        </div>
+        <div class="grid grid-2">
+          ${cards || `<div class="card"><h3>No news yet.</h3><p class="muted">Check back soon.</p></div>`}
+        </div>
+      </section>
+    </main>
+  `);
 });
+
+app.get("/news/:slug", (req, res) => {
+  const post = readNewsPosts().find(p => p.slug === req.params.slug && p.status === "published");
+
+  if (!post) {
+    return render(req, res, "News", errorCard("News post not found."));
+  }
+
+  render(req, res, post.title, `
+    <main class="container">
+      <section>
+        <article class="card">
+          ${post.image ? `<img class="article-hero" src="${esc(post.image)}" alt="${esc(post.title)}">` : ""}
+          <p class="meta">${esc(post.category || "News")} · ${esc(post.createdAt || "")}</p>
+          <h1>${esc(post.title)}</h1>
+          <p class="lead">${esc(post.summary || "")}</p>
+          <div class="news-body">${post.body || ""}</div>
+          <p><a class="btn secondary" href="/news">Back to News</a></p>
+        </article>
+      </section>
+    </main>
+  `);
+});
+
+
 
 app.get(["/register", "/register.html"], (req, res) => {
   render(req, res, "Register", `<main class="container"><section>
@@ -833,6 +902,144 @@ app.get("/admin/bible", requireGM, async (req, res) => {
 });
 
 
+
+app.get("/admin/news", requireGM, async (req, res) => {
+  const posts = readNewsPosts().sort((a, b) => Number(b.id) - Number(a.id));
+
+  const rows = posts.map(post => `
+    <tr>
+      <td>${esc(post.id)}</td>
+      <td><a href="/admin/news/${post.id}/edit"><strong>${esc(post.title)}</strong></a></td>
+      <td>${esc(post.status)}</td>
+      <td>${esc(post.category || "")}</td>
+      <td>${esc(post.createdAt || "")}</td>
+      <td><a class="btn secondary" href="/admin/news/${post.id}/edit">Edit</a></td>
+    </tr>
+  `).join("");
+
+  render(req, res, "News Manager", `
+    <main class="container admin-control">
+      <section>
+        <div class="section-head">
+          <p class="eyebrow">FrozenThrone CMS</p>
+          <h1>News Manager</h1>
+          <p>Create and edit public news posts without touching HTML files.</p>
+        </div>
+
+        <div class="card highlight">
+          <a class="btn" href="/admin/news/new">+ New News Post</a>
+          <a class="btn secondary" href="/admin">Back to Admin</a>
+          <a class="btn secondary" href="/news">View Public News</a>
+        </div>
+
+        <div class="card">
+          <h3>Posts</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Category</th><th>Date</th><th>Edit</th></tr></thead>
+              <tbody>${rows || `<tr><td colspan="6">No posts yet.</td></tr>`}</tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  `);
+});
+
+app.get(["/admin/news/new", "/admin/news/:id/edit"], requireGM, async (req, res) => {
+  const posts = readNewsPosts();
+  const post = req.params.id
+    ? posts.find(p => Number(p.id) === Number(req.params.id))
+    : {
+        id: "",
+        title: "",
+        slug: "",
+        summary: "",
+        body: "",
+        status: "draft",
+        category: "Announcements",
+        image: "/images/frozenthrone-bg.jpeg",
+        createdAt: new Date().toISOString().slice(0, 10)
+      };
+
+  if (!post) return render(req, res, "News Manager", errorCard("News post not found."));
+
+  render(req, res, "News Editor", `
+    <main class="container admin-control">
+      <section>
+        <div class="section-head">
+          <p class="eyebrow">FrozenThrone CMS</p>
+          <h1>${post.id ? "Edit News Post" : "New News Post"}</h1>
+          <p>Simple editor first. WYSIWYG comes after this saves clean.</p>
+        </div>
+
+        <div class="card highlight">
+          <form method="POST" action="/admin/news/save">
+            <input type="hidden" name="id" value="${esc(post.id)}">
+
+            <label>Title</label>
+            <input name="title" value="${esc(post.title)}" required>
+
+            <label>Slug</label>
+            <input name="slug" value="${esc(post.slug)}" placeholder="beta-realm-is-online">
+
+            <label>Summary</label>
+            <input name="summary" value="${esc(post.summary || "")}">
+
+            <label>Category</label>
+            <input name="category" value="${esc(post.category || "Announcements")}">
+
+            <label>Featured Image URL</label>
+            <input name="image" value="${esc(post.image || "")}" placeholder="/images/frozenthrone-bg.jpeg">
+
+            <label>Status</label>
+            <select name="status">
+              <option value="draft" ${post.status === "draft" ? "selected" : ""}>Draft</option>
+              <option value="published" ${post.status === "published" ? "selected" : ""}>Published</option>
+            </select>
+
+            <label>Date</label>
+            <input name="createdAt" value="${esc(post.createdAt || "")}" placeholder="2026-07-05">
+
+            <label>Body HTML</label>
+            <textarea name="body" rows="14">${esc(post.body || "")}</textarea>
+
+            <button class="btn" type="submit">Save News Post</button>
+            <a class="btn secondary" href="/admin/news">Cancel</a>
+          </form>
+        </div>
+      </section>
+    </main>
+  `);
+});
+
+app.post("/admin/news/save", requireGM, async (req, res) => {
+  const posts = readNewsPosts();
+  const id = Number(req.body.id);
+  const nextId = posts.length ? Math.max(...posts.map(p => Number(p.id) || 0)) + 1 : 1;
+
+  const post = {
+    id: id || nextId,
+    title: String(req.body.title || "Untitled").trim(),
+    slug: newsSlug(req.body.slug || req.body.title),
+    summary: String(req.body.summary || "").trim(),
+    body: String(req.body.body || "").trim(),
+    status: req.body.status === "published" ? "published" : "draft",
+    category: String(req.body.category || "Announcements").trim(),
+    image: String(req.body.image || "").trim(),
+    createdAt: String(req.body.createdAt || new Date().toISOString().slice(0, 10)).trim()
+  };
+
+  const idx = posts.findIndex(p => Number(p.id) === post.id);
+  if (idx >= 0) posts[idx] = post;
+  else posts.push(post);
+
+  writeNewsPosts(posts);
+  res.redirect("/admin/news");
+});
+
+
+
 app.get("/admin", requireGM, async (req, res) => {
   try {
     const activeRealm = await getActiveRealm(req);
@@ -843,14 +1050,14 @@ app.get("/admin", requireGM, async (req, res) => {
 
     const [accounts] = await authConn.execute("SELECT COUNT(*) AS total FROM account");
     const [activeChars] = await activeCharConn.execute("SELECT COUNT(*) AS total FROM characters WHERE deleteDate IS NULL OR deleteDate = 0");
-    const [online] = await activeCharConn.execute("SELECT guid, name, level, race, class FROM characters WHERE online = 1 ORDER BY level DESC, name ASC LIMIT 10");
+    const [online] = await activeCharConn.execute("SELECT guid, name, level, race, class FROM characters WHERE online = 1 ORDER BY level DESC, name ASC LIMIT 12");
 
     await authConn.end();
     await activeCharConn.end();
 
     const onlineRows = online.map(c => `
       <tr>
-        <td><a href="/admin/player/${activeRealm.realm_key}/${c.guid}">${esc(c.name)}</a></td>
+        <td><a href="/admin/player/${activeRealm.realm_key}/${c.guid}"><strong>${esc(c.name)}</strong></a></td>
         <td>${esc(c.level)}</td>
         <td>${esc(raceName(c.race))}</td>
         <td>${esc(className(c.class))}</td>
@@ -871,72 +1078,75 @@ app.get("/admin", requireGM, async (req, res) => {
     }).join(" ");
 
     render(req, res, "FrozenThrone Control Center", `
-      <main class="container">
+      <main class="container admin-control">
         <section>
           <div class="section-head">
-            <p class="eyebrow">FrozenThrone OS</p>
-            <h1>FrozenThrone Control Center</h1>
-            <p>Your server management OS. Search, inspect, edit, reward, and manage daily work from one place.</p>
+            <p class="eyebrow">FrozenThrone GM Console</p>
+            <h1>Control Center</h1>
+            <p>Manage players, items, NPCs, quests, mail, vendors, logs, and daily GM work from one place.</p>
           </div>
 
           ${realmBadge(activeRealm)}
 
-          <div class="card">
-            <h3>Realm Switcher</h3>
-            <p class="muted">Choose which realm the Control Center reads from.</p>
-            ${realmLinks}
-          </div>
-
           <div class="grid grid-4">
-            <div class="card stat"><span>Accounts</span><strong>${esc(accounts[0].total)}</strong></div>
             <div class="card stat"><span>Active Realm</span><strong>${esc(activeRealm.display_name)}</strong></div>
+            <div class="card stat"><span>Accounts</span><strong>${esc(accounts[0].total)}</strong></div>
             <div class="card stat"><span>Characters</span><strong>${esc(activeChars[0].total)}</strong></div>
-            <div class="card stat"><span>Online</span><strong>${esc(online.length)}</strong></div>
+            <div class="card stat"><span>Online Now</span><strong>${esc(online.length)}</strong></div>
           </div>
 
           <div class="card highlight">
-            <h3>Quick Search</h3>
-            <div class="grid grid-2">
+            <h3>Realm Switcher</h3>
+            <p class="muted">Choose which realm the admin tools read from.</p>
+            <div class="admin-actions">${realmLinks}</div>
+          </div>
+
+          <div class="card highlight">
+            <h3>GM Quick Search</h3>
+            <p class="muted">Fast entry points for daily server work.</p>
+
+            <div class="grid grid-4">
+              <form method="GET" action="/admin">
+                <label>Player</label>
+                <input name="q" placeholder="Frozen, Noodle, Ghostmaker">
+                <button class="btn" type="submit">Search</button>
+              </form>
+
+              <form method="GET" action="/admin">
+                <label>Item</label>
+                <input name="item" placeholder="900001 or Shadowmourne">
+                <button class="btn" type="submit">Search</button>
+              </form>
+
               <form method="GET" action="/admin/npcs">
-                <label>NPC Search</label>
+                <label>NPC</label>
                 <input name="q" placeholder="900100, Teleporter, Lich King">
-                <button class="btn" type="submit">Search NPCs</button>
+                <button class="btn" type="submit">Search</button>
               </form>
 
               <form method="GET" action="/admin/quests">
-                <label>Quest Search</label>
+                <label>Quest</label>
                 <input name="q" placeholder="Quest ID or title">
-                <button class="btn" type="submit">Search Quests</button>
-              </form>
-
-              <form method="GET" action="/admin">
-                <label>Player Search</label>
-                <input name="q" placeholder="Frozen, Noodle, Ghostmaker">
-                <button class="btn" type="submit">Search Players</button>
-              </form>
-
-              <form method="GET" action="/admin">
-                <label>Item Search</label>
-                <input name="item" placeholder="900001 or Shadowmourne">
-                <button class="btn" type="submit">Search Items</button>
+                <button class="btn" type="submit">Search</button>
               </form>
             </div>
           </div>
 
           <div class="grid grid-3">
-            ${card("Players", "Inspect characters, inventory, accounts, gear, and online players.", "/admin", "👥")}
-            ${card("Items", "Search items, view owners, drops, vendors, and copy commands.", "/admin?item=Shadowmourne", "🎒")}
-            ${card("NPCs", "Search NPCs, inspect spawns, vendors, loot, and quests.", "/admin/npcs", "🧙")}
-            ${card("Quests", "Search quests, view starters, enders, objectives, and rewards.", "/admin/quests", "📜")}
-            ${card("Mail", "Send real in-game item mail to players.", "/admin/mail", "📬")}
-            ${card("Vendor Tools", "Open an NPC, then edit its vendor inventory.", "/admin/npcs", "🛒")}
+            ${card("Players", "Inspect characters, inventory, account data, gear, and online status.", "/admin", "👥")}
+            ${card("Items", "Inspect item stats, owners, vendors, drops, and GM commands.", "/admin?item=Shadowmourne", "🎒")}
+            ${card("NPCs", "Inspect NPC templates, loot, vendors, quests, and spawn data.", "/admin/npcs", "🧙")}
+            ${card("Quests", "Inspect quest starters, enders, objectives, rewards, and chains.", "/admin/quests", "📜")}
+            ${card("Mail", "Send in-game mail, gold, items, and player rewards.", "/admin/mail", "📬")}
+            ${card("Vendor Tools", "Open an NPC and manage its vendor inventory.", "/admin/npcs", "🛒")}
             ${card("Accounts", "Inspect accounts, GM access, and all characters.", "/admin/account/1", "👤")}
-            ${card("Armory", "View public character pages and gear icons.", "/armory", "⚔️")}
-            ${card("Logs", "View GM actions, mail sends, vendor edits, and quest changes.", "/admin/logs", "📋")}
+            ${card("Public Armory", "Preview the public-facing character and database pages.", "/armory", "⚔️")}
+            ${card("News CMS", "Create and publish realm news posts.", "/admin/news", "📰")}
+            ${card("Logs", "Review GM actions, mail sends, vendor edits, and changes.", "/admin/logs", "📋")}
           </div>
 
           <div class="card">
-            <h3>Online Players — Main Realm</h3>
+            <h3>Online Players — ${esc(activeRealm.display_name)}</h3>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Name</th><th>Level</th><th>Race</th><th>Class</th></tr></thead>
@@ -952,6 +1162,7 @@ app.get("/admin", requireGM, async (req, res) => {
     render(req, res, "Admin Error", errorCard("Admin panel failed. Check logs."));
   }
 });
+
 
 
 app.get("/admin/player/:realm/:guid", requireGM, async (req, res) => {

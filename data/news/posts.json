@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "title": "Beta Realm Is Online",
+    "slug": "beta-realm-is-online",
+    "summary": "FrozenThrone now has a separate Beta realm for testing new features without risking production.",
+    "body": "<p>FrozenThrone Beta Realm is now online for testing new systems before they reach production.</p>",
+    "status": "published",
+    "category": "Announcements",
+    "image": "/images/frozenthrone-bg.jpeg",
+    "createdAt": "2026-07-05"
+  },
+  {
+    "id": 2,
+    "title": "Website V2",
+    "slug": "website-v2",
+    "summary": "Cleanup of database",
+    "body": "Started about a week ago and finally released version 2 of website. Stay tuned for updates",
+    "status": "published",
+    "category": "Announcements",
+    "image": "/images/frozenthrone-bg.jpeg",
+    "createdAt": "2026-07-06"
+  }
+]

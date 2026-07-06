@@ -5562,3 +5562,69 @@ main.container > section:first-of-type {
     font-size: 13px !important;
   }
 }
+
+/* Admin Control Center cleanup */
+.admin-control .section-head {
+  text-align: center !important;
+  padding: 36px 18px 30px !important;
+}
+
+.admin-control .card {
+  background: rgba(2, 12, 22, .94) !important;
+  backdrop-filter: blur(3px);
+}
+
+.admin-control .highlight {
+  padding: 22px !important;
+}
+
+.admin-control .admin-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+}
+
+.admin-control .highlight .grid.grid-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.admin-control form {
+  background: rgba(0, 8, 16, .7) !important;
+  border: 1px solid rgba(93,188,255,.22) !important;
+  padding: 14px !important;
+  border-radius: 8px !important;
+}
+
+.admin-control form label {
+  display: block !important;
+  margin-bottom: 7px !important;
+  font-weight: 900 !important;
+  color: #dff7ff !important;
+}
+
+.admin-control form input {
+  width: 100% !important;
+  min-height: 42px !important;
+  margin-bottom: 10px !important;
+}
+
+.admin-control form .btn,
+.admin-control form button {
+  width: 100% !important;
+}
+
+.admin-control .admin-card {
+  min-height: 140px !important;
+  padding: 20px !important;
+}
+
+.admin-control .admin-card h3 {
+  margin-bottom: 10px !important;
+}
+
+@media (max-width: 850px) {
+  .admin-control .highlight .grid.grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
