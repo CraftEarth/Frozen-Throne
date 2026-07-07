@@ -1,4 +1,6 @@
 const { buildStats } = require("./engine/stats");
+const { getTitleName } = require("../dbc/titles");
+const { getAchievementName, getAchievement } = require("../dbc/achievements");
 const { loadCharacterView } = require("./repositories/characterViewRepository");
 const { buildCharacterProfileView } = require("./services/characterViewService");
 const { renderCharacterV3 } = require("./renderers/characterV3Renderer");
@@ -294,7 +296,7 @@ app.get("/armory/quests", async (req, res) => {
 
     const resultRows = rows.map(q => `
       <tr>
-        <td><strong>${esc(q.LogTitle || "Untitled Quest")}</strong></td>
+        <td><a href="/armory/quest/${esc(q.ID)}"><strong>${esc(q.LogTitle || "Untitled Quest")}</strong></a></td>
         <td>${esc(q.ID)}</td>
         <td>${esc(q.QuestLevel)}</td>
         <td>${esc(q.MinLevel)}</td>
@@ -316,6 +318,74 @@ app.get("/armory/quests", async (req, res) => {
   } catch (err) {
     console.error("public quest db failed", err);
     render(req, res, "Quest Error", errorCard("Quest database failed."));
+  }
+});
+
+
+
+app.get("/armory/quest/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return render(req, res, "Quest Database", errorCard("Invalid quest ID."));
+  }
+
+  try {
+    const conn = await worldDb();
+
+    const [rows] = await conn.execute(
+      `SELECT *
+       FROM quest_template
+       WHERE ID = ?
+       LIMIT 1`,
+      [id]
+    );
+
+    await conn.end();
+
+    if (!rows.length) {
+      return render(req, res, "Quest Database", errorCard("Quest not found."));
+    }
+
+    const q = rows[0];
+
+    render(req, res, `${q.LogTitle || "Quest"} - Quest Database`, databaseFrame("quests", q.LogTitle || "Quest", `Quest ID ${q.ID} · Level ${q.QuestLevel || 0} · Min Level ${q.MinLevel || 0}`, `
+      <div class="card item-detail-hero">
+        <h2>${esc(q.LogTitle || "Untitled Quest")}</h2>
+        <p class="muted">Quest ID ${esc(q.ID)} · Level ${esc(q.QuestLevel || 0)} · Min Level ${esc(q.MinLevel || 0)}</p>
+        <a class="ft-btn secondary" href="/armory/quests">Back to Quests</a>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="card stat"><span>ID</span><strong>${esc(q.ID)}</strong></div>
+        <div class="card stat"><span>Quest Level</span><strong>${esc(q.QuestLevel || 0)}</strong></div>
+        <div class="card stat"><span>Min Level</span><strong>${esc(q.MinLevel || 0)}</strong></div>
+        <div class="card stat"><span>Sort</span><strong>${esc(q.QuestSortID || 0)}</strong></div>
+      </div>
+
+      <div class="card">
+        <h3>📜 Quest Details</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <tbody>
+              <tr><td>Type</td><td>${esc(q.QuestType || 0)}</td></tr>
+              <tr><td>Flags</td><td>${esc(q.Flags || 0)}</td></tr>
+              <tr><td>Reward XP</td><td>${esc(q.RewardXPDifficulty || 0)}</td></tr>
+              <tr><td>Reward Money</td><td>${esc(q.RewardMoney || 0)}</td></tr>
+              <tr><td>Reward Bonus Money</td><td>${esc(q.RewardBonusMoney || 0)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Objective / Text</h3>
+        <p class="muted">${esc(q.QuestDescription || q.LogDescription || q.QuestCompletionLog || "No quest text found in this database row.")}</p>
+      </div>
+    `));
+  } catch (err) {
+    console.error("public quest detail failed", err);
+    render(req, res, "Quest Error", errorCard("Quest detail page failed."));
   }
 });
 
@@ -358,7 +428,7 @@ app.get("/armory/spells", async (req, res) => {
 
     const resultRows = rows.map(sp => `
       <tr>
-        <td><strong>${esc(sp.name || "Unnamed Spell")}</strong></td>
+        <td><a href="/armory/spell/${esc(sp.ID)}"><strong>${esc(sp.name || "Unnamed Spell")}</strong></a></td>
         <td>${esc(sp.ID)}</td>
         <td>${esc(sp.SpellLevel || 0)}</td>
         <td>${esc(sp.BaseLevel || 0)}</td>
@@ -382,6 +452,86 @@ app.get("/armory/spells", async (req, res) => {
     render(req, res, "Spell Error", errorCard("Spell database failed. spell_dbc may be missing or named differently."));
   }
 });
+
+
+app.get("/armory/spell/:id", async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return render(req, res, "Spell Database", errorCard("Invalid spell ID."));
+  }
+
+  try {
+    const conn = await worldDb();
+
+    const [rows] = await conn.execute(
+      `SELECT *
+       FROM spell_dbc
+       WHERE Id = ?
+       LIMIT 1`,
+      [id]
+    );
+
+    await conn.end();
+
+    if (!rows.length) {
+      return render(req, res, "Spell Database", errorCard("Spell not found."));
+    }
+
+    const sp = rows[0];
+
+    render(req, res, `${sp.SpellName || "Spell"} - Spell Database`, databaseFrame("spells", sp.SpellName || "Spell", `Spell ID ${sp.Id} · Spell Level ${sp.SpellLevel || 0} · Base Level ${sp.BaseLevel || 0}`, `
+      <div class="card item-detail-hero">
+        <h2>${esc(sp.SpellName || "Unnamed Spell")}</h2>
+        <p class="muted">Spell ID ${esc(sp.Id)} · Spell Level ${esc(sp.SpellLevel || 0)} · Base Level ${esc(sp.BaseLevel || 0)}</p>
+        <a class="ft-btn secondary" href="/armory/spells">Back to Spells</a>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="card stat"><span>ID</span><strong>${esc(sp.Id)}</strong></div>
+        <div class="card stat"><span>Spell Level</span><strong>${esc(sp.SpellLevel || 0)}</strong></div>
+        <div class="card stat"><span>Base Level</span><strong>${esc(sp.BaseLevel || 0)}</strong></div>
+        <div class="card stat"><span>School</span><strong>${esc(sp.SchoolMask || 0)}</strong></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>✨ Spell Info</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <tbody>
+                <tr><td>Dispel</td><td>${esc(sp.Dispel || 0)}</td></tr>
+                <tr><td>Mechanic</td><td>${esc(sp.Mechanic || 0)}</td></tr>
+                <tr><td>Range Index</td><td>${esc(sp.RangeIndex || 0)}</td></tr>
+                <tr><td>Duration Index</td><td>${esc(sp.DurationIndex || 0)}</td></tr>
+                <tr><td>Max Level</td><td>${esc(sp.MaxLevel || 0)}</td></tr>
+                <tr><td>Damage Class</td><td>${esc(sp.DmgClass || 0)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚔ Effects</h3>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Effect</th><th>Base Points</th><th>Aura</th><th>Trigger Spell</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>${esc(sp.Effect1 || 0)}</td><td>${esc(sp.EffectBasePoints1 || 0)}</td><td>${esc(sp.EffectApplyAuraName1 || 0)}</td><td>${esc(sp.EffectTriggerSpell1 || 0)}</td></tr>
+                <tr><td>2</td><td>${esc(sp.Effect2 || 0)}</td><td>${esc(sp.EffectBasePoints2 || 0)}</td><td>${esc(sp.EffectApplyAuraName2 || 0)}</td><td>${esc(sp.EffectTriggerSpell2 || 0)}</td></tr>
+                <tr><td>3</td><td>${esc(sp.Effect3 || 0)}</td><td>${esc(sp.EffectBasePoints3 || 0)}</td><td>${esc(sp.EffectApplyAuraName3 || 0)}</td><td>${esc(sp.EffectTriggerSpell3 || 0)}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `));
+  } catch (err) {
+    console.error("public spell detail failed", err);
+    render(req, res, "Spell Error", errorCard("Spell detail page failed."));
+  }
+});
+
 
 app.get("/armory/mounts", async (req, res) => {
   const q = String(req.query.q || "").trim();
@@ -427,8 +577,8 @@ app.get("/armory/mounts", async (req, res) => {
 
     const resultRows = rows.map(m => `
       <tr>
-        <td><img class="item-icon" src="${itemIconUrl(m.displayid)}" alt=""> <strong>${esc(m.name || "Unnamed Mount")}</strong></td>
-        <td>${esc(m.entry)}</td>
+        <td><a href="/armory/item/${esc(m.entry)}"><img class="item-icon" src="${itemIconUrl(m.displayid)}" alt=""> <strong>${esc(m.name || "Unnamed Mount")}</strong></a></td>
+        <td><a href="/armory/item/${esc(m.entry)}">${esc(m.entry)}</a></td>
         <td>${esc(itemQualityName(m.Quality))}</td>
         <td>${esc(m.ItemLevel || 0)}</td>
         <td>${esc(m.RequiredLevel || 0)}</td>
@@ -482,7 +632,8 @@ app.get("/armory/achievements", async (req, res) => {
 
     const resultRows = rows.map(a => `
       <tr>
-        <td><strong>Achievement #${esc(a.ID)}</strong></td>
+        <td><strong>${esc(getAchievementName(a.ID))}</strong></td>
+        <td>${esc((getAchievement(a.ID).description || "").slice(0, 140))}</td>
         <td>${esc(a.ID)}</td>
         <td>${esc(a.points || 0)}</td>
         <td>${esc(a.mapID)}</td>
@@ -498,7 +649,7 @@ app.get("/armory/achievements", async (req, res) => {
         <a class="ft-btn secondary" href="/armory/achievements">Reset</a>
       </form>
       <div class="database-results"><div class="card"><h3>${q ? "Results" : "Achievements"}</h3><div class="table-wrap"><table class="data-table">
-        <thead><tr><th>Achievement</th><th>ID</th><th>Points</th><th>Map</th><th>Faction</th><th>Count</th></tr></thead>
+        <thead><tr><th>Achievement</th><th>Description</th><th>ID</th><th>Points</th><th>Map</th><th>Faction</th><th>Count</th></tr></thead>
         <tbody>${resultRows || `<tr><td colspan="6">No achievements found.</td></tr>`}</tbody>
       </table></div></div></div>
     `));
@@ -539,9 +690,9 @@ app.get("/armory/titles", async (req, res) => {
 
     const resultRows = rows.map(t => `
       <tr>
-        <td><strong>Alliance Title #${esc(t.alliance_id)}</strong></td>
+        <td><strong>${esc(getTitleName(t.alliance_id))}</strong></td>
         <td>${esc(t.alliance_id)}</td>
-        <td><strong>Horde Title #${esc(t.horde_id)}</strong></td>
+        <td><strong>${esc(getTitleName(t.horde_id))}</strong></td>
         <td>${esc(t.horde_id)}</td>
       </tr>
     `).join("");

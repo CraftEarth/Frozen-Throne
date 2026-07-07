@@ -22,6 +22,9 @@ const path = require("path");
 const { buildMeta } = require("./modules/seo/seo");
 const registerArmoryRoutes = require("./modules/armory/routes");
 const registerDocsRoutes = require("./modules/docs/routes");
+const registerCommunityRoutes = require("./modules/community/routes");
+const registerDatabaseRoutes = require("./modules/database/routes");
+const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -482,8 +485,6 @@ loadStats();
 
 app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
 app.get("/rankings", (req, res) => render(req, res, "Rankings", `<main class="ft-shell"><section class="ft-frame"><div class="ft-section-tabs"><a class="active">Level</a><a>PvP</a><a>Guilds</a><a>Richest</a></div><div class="ft-panel"><h1>Rankings</h1><p class="muted">Rankings engine coming next.</p></div></section></main>`));
-app.get("/forums", (req, res) => render(req, res, "Forums", `<main class="ft-shell"><section class="ft-frame"><div class="ft-section-tabs"><a class="active">General</a><a>Guides</a><a>Bug Reports</a><a>Suggestions</a><a>Support</a></div><div class="ft-panel"><h1>Forums</h1><p class="muted">Forum system coming soon.</p></div></section></main>`));
-
 
 app.get("/database", (req, res) => res.redirect("/armory/characters"));
 
@@ -510,6 +511,33 @@ registerDocsRoutes(app, {
   esc,
   errorCard
 });
+
+registerCommunityRoutes(app, {
+  render,
+  esc,
+  dbConfig,
+  mysql,
+  requireLogin,
+  requireGM
+});
+
+registerDatabaseRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig
+});
+
+
+registerCommunityAdminRoutes(app, {
+  render,
+  esc,
+  dbConfig,
+  mysql,
+  requireGM
+});
+
+
 
 
 
