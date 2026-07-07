@@ -72,15 +72,14 @@ function renderPaperSlot(slot, label, item) {
   const iconUrl = item ? itemIcon(item) : "";
   const q = item ? esc(item.qualityClass || "q0") : "empty";
   const name = item ? esc(item.name) : esc(label);
+  const itemId = item ? Number(item.entry || item.itemEntry || item.item || item.id || 0) : 0;
   const tooltip = item ? `<div class="v3-paper-tooltip">${renderItem(item)}</div>` : "";
+  const iconHtml = iconUrl ? `<img src="${esc(iconUrl)}" alt="${name}">` : `<div class="v3-paper-empty">?</div>`;
+  const inner = `${iconHtml}<small>${esc(label)}</small>${tooltip}`;
 
-  return `
-    <div class="v3-paper-slot-icon ${q}" data-slot="${esc(slot)}" tabindex="0">
-      ${iconUrl ? `<img src="${esc(iconUrl)}" alt="${name}">` : `<div class="v3-paper-empty">?</div>`}
-      <small>${esc(label)}</small>
-      ${tooltip}
-    </div>
-  `;
+  return itemId
+    ? `<a class="v3-paper-slot-icon ${q}" data-slot="${esc(slot)}" tabindex="0" href="/armory/item/${esc(itemId)}">${inner}</a>`
+    : `<div class="v3-paper-slot-icon ${q}" data-slot="${esc(slot)}" tabindex="0">${inner}</div>`;
 }
 
 function renderPaperDoll(items = [], images = {}) {

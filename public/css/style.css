@@ -6077,3 +6077,13 @@ main.container > section:first-of-type {
 .forum-character-card.class-8 { border-color:#69ccf0; }
 .forum-character-card.class-9 { border-color:#9482c9; }
 .forum-character-card.class-11 { border-color:#ff7d0a; }
+
+.v3-paper-slot-icon {
+  text-decoration: none;
+  color: inherit;
+}
+
+.v3-paper-slot-icon:hover {
+  transform: scale(1.06);
+  z-index: 20;
+}
