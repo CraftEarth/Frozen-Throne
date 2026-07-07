@@ -24,6 +24,8 @@ const registerArmoryRoutes = require("./modules/armory/routes");
 const registerDocsRoutes = require("./modules/docs/routes");
 const registerCommunityRoutes = require("./modules/community/routes");
 const registerDatabaseRoutes = require("./modules/database/routes");
+const registerVoteRoutes = require("./modules/votes/routes");
+const registerVoteAdminRoutes = require("./modules/votes/admin-routes");
 const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
 
 const app = express();
@@ -484,7 +486,7 @@ loadStats();
 
 
 app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
-app.get("/rankings", (req, res) => render(req, res, "Rankings", `<main class="ft-shell"><section class="ft-frame"><div class="ft-section-tabs"><a class="active">Level</a><a>PvP</a><a>Guilds</a><a>Richest</a></div><div class="ft-panel"><h1>Rankings</h1><p class="muted">Rankings engine coming next.</p></div></section></main>`));
+app.get("/rankings", (req, res) => res.redirect("/players.html"));
 
 app.get("/database", (req, res) => res.redirect("/armory/characters"));
 
@@ -527,6 +529,24 @@ registerDatabaseRoutes(app, {
   mysql,
   dbConfig
 });
+
+registerVoteRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig,
+  requireLogin
+});
+
+registerVoteAdminRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig,
+  requireGM
+});
+
+
 
 
 registerCommunityAdminRoutes(app, {
@@ -3553,53 +3573,116 @@ app.get(["/shop", "/shop.html"], requireLogin, (req, res) => {
   </section></main>`);
 });
 
-app.get("/vote", requireLogin, (req, res) => {
-  render(req, res, "Vote", `
-    <main class="container">
-      <section>
-        <div class="section-head">
-          <p class="eyebrow">FrozenThrone Voting</p>
-          <h1>Vote Rewards</h1>
-          <p>Support FrozenThrone by voting every 6 hours and earn rewards automatically.</p>
-        </div>
+app.get("/vote", requireLogin, async (req, res) => {
+  try {
+    const conn = await mysql.createPool({
+      ...dbConfig,
+      database: "frozenthrone",
+      waitForConnections: true,
+      connectionLimit: 10
+    });
 
-        <div class="grid grid-2">
+    const [[stats]] = await conn.execute(`
+      SELECT lifetime_votes, vote_tokens, current_streak, last_vote_at,
+             DATE_ADD(last_vote_at, INTERVAL 6 HOUR) AS next_vote_at
+      FROM vote_accounts
+      WHERE account_id = ?
+    `, [req.user.id]);
+
+    const [history] = await conn.execute(`
+      SELECT site, reward_tokens, reward_gold, created_at
+      FROM vote_logs
+      WHERE account_id = ?
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [req.user.id]);
+
+    const lifetimeVotes = stats?.lifetime_votes || 0;
+    const voteTokens = stats?.vote_tokens || 0;
+    const currentStreak = stats?.current_streak || 0;
+    const lastVote = stats?.last_vote_at ? new Date(stats.last_vote_at).toLocaleString() : "Never";
+    const nextVoteAt = stats?.next_vote_at ? new Date(stats.next_vote_at) : null;
+    const readyToVote = !nextVoteAt || nextVoteAt <= new Date();
+    const nextVoteText = readyToVote ? "Ready Now" : nextVoteAt.toLocaleString();
+
+    const historyRows = history.map(v => `
+      <tr>
+        <td>${esc(v.site)}</td>
+        <td>${esc(new Date(v.created_at).toLocaleString())}</td>
+        <td>${esc(v.reward_tokens)} token</td>
+        <td>${esc(v.reward_gold)} gold</td>
+      </tr>
+    `).join("");
+
+    render(req, res, "Vote", `
+      <main class="container">
+        <section>
+          <div class="section-head">
+            <p class="eyebrow">FrozenThrone Voting</p>
+            <h1>Vote Rewards</h1>
+            <p>Support FrozenThrone by voting every 6 hours and earn rewards automatically.</p>
+          </div>
+
+          <div class="grid grid-4">
+            <div class="card stat"><span>Lifetime Votes</span><strong>${esc(lifetimeVotes)}</strong></div>
+            <div class="card stat"><span>Vote Tokens</span><strong>${esc(voteTokens)}</strong></div>
+            <div class="card stat"><span>Vote Streak</span><strong>${esc(currentStreak)}</strong></div>
+            <div class="card stat"><span>Last Vote</span><strong>${esc(lastVote)}</strong></div>
+          </div>
+
           <div class="card highlight">
-            <h2>🎁 Every Vote Rewards You With</h2>
-            <ul class="clean-list">
-              <li>🪙 1 Vote Token</li>
-              <li>💰 1 Gold</li>
-              <li>❄️ 5 Emblems of Frost</li>
-            </ul>
-            <p class="muted">You may vote once every <strong>6 hours</strong>.</p>
-            <a class="btn gold" href="https://topg.org/wow-private-servers/server-683511" target="_blank">Vote on TopG</a>
+            <h2>⏳ Next Vote</h2>
+            <p><strong>${esc(nextVoteText)}</strong></p>
+            <p class="muted">${readyToVote ? "You can vote now." : "Cooldown active. Voting unlocks at the time above."}</p>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card highlight">
+              <h2>🎁 Every Vote Rewards You With</h2>
+              <ul class="clean-list">
+                <li>🪙 1 Vote Token</li>
+                <li>💰 1 Gold</li>
+              </ul>
+              <p class="muted">You may vote once every <strong>6 hours</strong>.</p>
+              <a class="btn gold" href="/vote/start/topg">Vote on TopG</a>
+            </div>
+
+            <div class="card">
+              <h2>🔥 Vote Streak</h2>
+              <p>Current streak: <strong>${esc(currentStreak)}</strong></p>
+              <hr>
+              <h3>Next Milestone</h3>
+              <p>🏆 <strong>150 Votes</strong><br>Rare Exclusive Mount</p>
+              <p class="muted">Mount rewards stay website/shop-side until unlocked.</p>
+            </div>
           </div>
 
           <div class="card">
-            <h2>🔥 Vote Streak</h2>
-            <div class="stat">
-              <strong>0</strong>
-              <span>Current Streak</span>
+            <h2>Recent Vote History</h2>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Site</th><th>Date</th><th>Tokens</th><th>Gold</th></tr></thead>
+                <tbody>${historyRows || `<tr><td colspan="4">No votes yet.</td></tr>`}</tbody>
+              </table>
             </div>
-            <hr>
-            <h3>Next Milestone</h3>
-            <p>🏆 <strong>150 Votes</strong><br>Rare Exclusive Mount</p>
           </div>
-        </div>
 
-        <div class="card">
-          <h2>How Voting Works</h2>
-          <ol>
-            <li>Login to your FrozenThrone account.</li>
-            <li>Click the Vote button.</li>
-            <li>Vote on TopG.</li>
-            <li>Return here.</li>
-            <li>Claim your rewards.</li>
-          </ol>
-        </div>
-      </section>
-    </main>
-  `);
+          <div class="card">
+            <h2>How Voting Works</h2>
+            <ol>
+              <li>Login to your FrozenThrone account.</li>
+              <li>Click the Vote button.</li>
+              <li>Vote on TopG.</li>
+              <li>TopG calls FrozenThrone back automatically.</li>
+              <li>Your vote tokens update here.</li>
+            </ol>
+          </div>
+        </section>
+      </main>
+    `);
+  } catch (err) {
+    render(req, res, "Vote Error", `<main class="container"><div class="card"><h3>Vote Error</h3><p>${esc(err.message)}</p></div></main>`);
+  }
 });
 
 
