@@ -25,10 +25,14 @@ module.exports = function registerVoteRoutes(app, tools) {
       const param = String(req.query.p_resp || "").trim();
       const voteIp = String(req.query.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "");
 
-      await conn.execute(`
-        INSERT INTO vote_callback_debug (site, ip, query_payload)
-        VALUES ('topg', ?, ?)
-      `, [voteIp, JSON.stringify(req.query)]);
+      try {
+        await conn.execute(`
+          INSERT INTO vote_callback_debug (site, ip, query_payload)
+          VALUES ('topg', ?, ?)
+        `, [voteIp, JSON.stringify(req.query)]);
+      } catch (logErr) {
+        console.error("topg callback debug log failed", logErr.message);
+      }
 
       const username = param.replace(/[^A-Za-z0-9_-]/g, "");
 
