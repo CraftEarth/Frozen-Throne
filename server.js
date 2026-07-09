@@ -24,6 +24,7 @@ const registerArmoryRoutes = require("./modules/armory/routes");
 const registerDocsRoutes = require("./modules/docs/routes");
 const registerCommunityRoutes = require("./modules/community/routes");
 const registerDatabaseRoutes = require("./modules/database/routes");
+const registerShopRoutes = require("./modules/shop/routes");
 const registerVoteRoutes = require("./modules/votes/routes");
 const registerVoteAdminRoutes = require("./modules/votes/admin-routes");
 const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
@@ -529,6 +530,15 @@ registerDatabaseRoutes(app, {
   mysql,
   dbConfig
 });
+
+registerShopRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig,
+  requireLogin
+});
+
 
 registerVoteRoutes(app, {
   render,
