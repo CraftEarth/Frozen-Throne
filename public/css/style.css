@@ -6090,3 +6090,228 @@ main.container > section:first-of-type {
 
 .steps .step{padding-left:22px}
 .steps .step::before{display:none}
+
+/* Public realm selector */
+.realm-switcher {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid rgba(93, 188, 255, .4);
+  border-radius: 5px;
+  background: rgba(2, 14, 26, .92);
+}
+
+.realm-switcher label {
+  color: #8fcff3;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+
+.realm-switcher select {
+  max-width: 155px;
+  padding: 6px 28px 6px 8px;
+  border: 1px solid rgba(93, 188, 255, .48);
+  border-radius: 3px;
+  background: #071d30;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .nav-actions {
+    width: 100%;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: center !important;
+  }
+
+  .realm-switcher {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-actions .btn {
+    width: auto !important;
+  }
+}
+
+/* Responsive site navigation */
+.navbar {
+  padding: 0 18px !important;
+}
+
+.nav-inner {
+  max-width: 1500px !important;
+  padding: 10px 0 !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  grid-template-areas: "brand links actions" !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.logo {
+  grid-area: brand;
+  min-width: 0 !important;
+}
+
+.nav-links {
+  grid-area: links;
+  width: auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.nav-links a {
+  padding: 8px 10px !important;
+  font-size: 13px !important;
+}
+
+.nav-actions {
+  grid-area: actions;
+  min-width: 0 !important;
+  width: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+}
+
+.nav-actions .btn {
+  width: auto !important;
+  padding: 8px 11px !important;
+}
+
+.realm-switcher {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+.realm-switcher select {
+  width: 138px;
+  max-width: 138px;
+}
+
+.status-dot {
+  flex: 0 0 auto;
+}
+
+.nav-toggle {
+  grid-area: toggle;
+  display: none;
+  width: 44px;
+  height: 40px;
+  padding: 8px 9px;
+  border: 1px solid rgba(93, 188, 255, .5);
+  border-radius: 5px;
+  background: linear-gradient(to bottom, #0f3957, #061a2d);
+  cursor: pointer;
+}
+
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  margin: 4px 0;
+  border-radius: 2px;
+  background: #dff5ff;
+  box-shadow: 0 0 7px rgba(93, 188, 255, .5);
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+@media (max-width: 1450px) {
+  .nav-inner {
+    grid-template-columns: minmax(190px, 1fr) auto !important;
+    grid-template-areas:
+      "brand actions"
+      "links links" !important;
+  }
+
+  .nav-links {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .navbar {
+    padding: 0 14px !important;
+  }
+
+  .nav-inner {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "brand toggle"
+      "links links"
+      "actions actions" !important;
+  }
+
+  .nav-toggle {
+    display: block;
+  }
+
+  .nav-links,
+  .nav-actions {
+    display: none !important;
+  }
+
+  .nav-open .nav-links {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100% !important;
+    padding-top: 2px;
+  }
+
+  .nav-open .nav-links a {
+    border: 1px solid rgba(87, 172, 226, .45) !important;
+    text-align: center;
+  }
+
+  .nav-open .nav-actions {
+    display: flex !important;
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    padding-top: 2px;
+  }
+
+  .nav-open .nav-toggle span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .nav-open .nav-toggle span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .nav-open .nav-toggle span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .logo {
+    font-size: 21px;
+  }
+
+  .nav-open .nav-links {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-open .realm-switcher {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-open .realm-switcher select {
+    width: min(190px, 65vw);
+    max-width: min(190px, 65vw);
+  }
+}

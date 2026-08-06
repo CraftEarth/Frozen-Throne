@@ -4,10 +4,17 @@ const fs = require("fs");
 const path = require("path");
 const mysql = require("mysql2/promise");
 
-const dbConfig = {
+const frostDbConfig = {
   host: process.env.DB_HOST || process.env.MYSQL_HOST || "127.0.0.1",
   user: process.env.DB_USER || process.env.MYSQL_USER || "root",
   password: process.env.DB_PASS || process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "",
+  multipleStatements: false
+};
+
+const shadowDbConfig = {
+  host: process.env.SHADOW_DB_HOST || frostDbConfig.host,
+  user: process.env.SHADOW_DB_USER || frostDbConfig.user,
+  password: process.env.SHADOW_DB_PASSWORD || frostDbConfig.password,
   multipleStatements: false
 };
 
@@ -16,12 +23,18 @@ async function main() {
   const realm = process.argv[3] || "main";
 
   if (!guid) {
-    console.error("Usage: node modules/renderer/build-character-input.js <guid> [main|beta]");
+    console.error("Usage: node modules/renderer/build-character-input.js <guid> [main|shadowmourne]");
     process.exit(1);
   }
 
-  const charactersDb = realm === "beta" ? "characters_beta" : "characters";
-  const worldDb = realm === "beta" ? "world_beta" : "world";
+  if (!["main", "shadowmourne"].includes(realm)) {
+    throw new Error(`Unsupported realm: ${realm}`);
+  }
+
+  const shadow = realm === "shadowmourne";
+  const dbConfig = shadow ? shadowDbConfig : frostDbConfig;
+  const charactersDb = shadow ? "acore_characters" : "characters";
+  const worldDb = shadow ? "acore_world" : "world";
 
   const charConn = await mysql.createConnection({ ...dbConfig, database: charactersDb });
   const worldConn = await mysql.createConnection({ ...dbConfig, database: worldDb });
@@ -60,8 +73,8 @@ async function main() {
     renderVersion: 1,
     realm,
     output: {
-      model: `/var/www/frozenthrone/public/images/armory/models/character-${guid}.png`,
-      portrait: `/var/www/frozenthrone/public/images/armory/portraits/character-${guid}.png`
+      model: `/var/www/frozenthrone/public/images/armory/models/character-${realm}-${guid}.png`,
+      portrait: `/var/www/frozenthrone/public/images/armory/portraits/character-${realm}-${guid}.png`
     },
     character: ch,
     equipment: gear.map(g => ({
@@ -80,7 +93,7 @@ async function main() {
   const outDir = "/var/www/frozenthrone/public/renders/input";
   fs.mkdirSync(outDir, { recursive: true });
 
-  const outFile = path.join(outDir, `character-${guid}.json`);
+  const outFile = path.join(outDir, `character-${realm}-${guid}.json`);
   fs.writeFileSync(outFile, JSON.stringify(data, null, 2));
 
   console.log(`Render input written: ${outFile}`);
