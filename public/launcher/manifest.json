@@ -1,0 +1,19 @@
+{
+  "launcherVersion": "0.1.1",
+  "clientVersion": "1.0.10",
+  "maintenance": false,
+  "message": "FrozenThrone login branding update available.",
+  "launcherPackage": {
+    "url": "http://51.81.87.159:3000/launcher/FrozenThroneLauncherUpdate.zip",
+    "size": 207058,
+    "sha256": "5364b06a236dca3c25be33d2cd3b738119fffe05d5a36d9f43be9441da162e49"
+  },
+  "files": [
+    {
+      "path": "FrozenThrone/frozenthrone-bg.png",
+      "url": "http://51.81.87.159:3000/launcher/files/frozenthrone-bg.png",
+      "size": 2981485,
+      "sha256": "14b52916af19dfc366aaa30379aab17eb3492ce50a4e8635ae4360a09502cb38"
+    }
+  ]
+}

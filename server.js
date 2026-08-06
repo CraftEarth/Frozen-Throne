@@ -42,6 +42,7 @@ app.use("/renders", express.static(path.join(__dirname, "public/renders")));
 app.use("/vendor", express.static(path.join(__dirname, "public/vendor")));
 app.use("/js", express.static(path.join(__dirname, "public/js")));
 app.use("/dev", express.static(path.join(__dirname, "public/dev")));
+app.use("/api/launcher", require("./launcher-status"));
 
 
 
@@ -126,12 +127,20 @@ app.get("/armory-viewer-test.html", (req, res) => {
 });
 
 app.use("/downloads", express.static(path.join(__dirname, "public/downloads")));
+app.use("/launcher", express.static(path.join(__dirname, "public/launcher")));
 
 const dbConfig = {
   host: process.env.DB_HOST || "127.0.0.1",
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_AUTH || "auth",
+};
+
+const shadowAuthConfig = {
+  host: process.env.SHADOW_DB_HOST || process.env.DB_HOST || "127.0.0.1",
+  user: process.env.SHADOW_DB_USER || process.env.DB_USER,
+  password: process.env.SHADOW_DB_PASSWORD || process.env.DB_PASSWORD,
+  database: process.env.SHADOW_DB_AUTH || "acore_auth",
 };
 
 const realms = [
@@ -221,6 +230,10 @@ function requireLogin(req, res, next) {
 
 async function authDb() {
   return mysql.createConnection(dbConfig);
+}
+
+async function shadowAuthDb() {
+  return mysql.createConnection(shadowAuthConfig);
 }
 
 async function characterDb(database) {
@@ -603,17 +616,48 @@ app.get(["/", "/index.html"], (req, res) => {
 });
 
 app.get(["/download", "/download.html"], (req, res) => {
-  render(req, res, "Download FrozenThrone | WotLK 3.3.5a", `<main class="container"><section>
-    <div class="section-head"><h1>Download & Connect</h1><p>Follow these steps to join FrozenThrone.</p></div>
+  render(req, res, "Download FrozenThrone Launcher | WotLK 3.3.5a", `<main class="container"><section>
+    <div class="section-head">
+      <h1>Download & Connect</h1>
+      <p>Install the FrozenThrone Launcher to connect, repair files, and see every available realm.</p>
+    </div>
+
     <div class="grid grid-2 steps">
-      <div class="card step"><h3>Download Client</h3><p class="muted">Use a Wrath of the Lich King 3.3.5a client.</p><a class="btn" href="/downloads/FrozenThrone_3.3.5a.zip">Download Client</a></div>
-      <div class="card step"><h3>Set Realmlist</h3><p>Open your realmlist file and set it to:</p><p><code>set realmlist 51.81.87.159</code></p></div>
-      <div class="card step"><h3>Create Account</h3><p class="muted">Register your account before logging into the game client.</p><a class="btn secondary" href="/register">Create Account</a></div>
-      <div class="card step"><h3>Choose Realm</h3><p class="muted">Use FrozenThrone for live play. Use FrozenThrone Beta only for testing.</p></div>
+      <div class="card step">
+        <h3>1. Download the Launcher</h3>
+        <p class="muted">Download the complete FrozenThrone Launcher package.</p>
+        <a class="btn" href="/launcher/FrozenThrone-Launcher-v0.1.1.zip" download>
+          Download FrozenThrone Launcher
+        </a>
+        <p class="muted">Version 0.1.1 · 116 KB</p>
+      </div>
+
+      <div class="card step">
+        <h3>2. Install It</h3>
+        <p class="muted">Extract every file from the ZIP directly into your clean World of Warcraft 3.3.5a folder.</p>
+      </div>
+
+      <div class="card step">
+        <h3>3. Repair & Launch</h3>
+        <p class="muted">Run <strong>FrozenThroneLauncher.exe</strong> as Administrator, click Repair, and let it finish.</p>
+      </div>
+
+      <div class="card step">
+        <h3>4. Create Your Account</h3>
+        <p class="muted">Register your account, select your realm access, and always start the game through our launcher.</p>
+        <a class="btn secondary" href="/register">Create Account</a>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <h3>Need the WoW 3.3.5a Client?</h3>
+      <p class="muted">The launcher requires a clean Wrath of the Lich King 3.3.5a client.</p>
+      <a class="btn secondary" href="/downloads/FrozenThrone_3.3.5a.zip">
+        Download Full Client
+      </a>
     </div>
   </section></main>`);
 });
-
 app.get(["/features", "/features.html"], (req, res) => {
   render(req, res, "Features", `<main class="container"><section>
     <div class="section-head"><h1>Server Features</h1><p>Wrath 3.3.5a, x1 progression, account tools, and a separate Beta realm for safe development.</p></div>
@@ -709,16 +753,42 @@ app.get("/news/:slug", (req, res) => {
 
 app.get(["/register", "/register.html"], (req, res) => {
   render(req, res, "Register", `<main class="container"><section>
-    <div class="section-head"><h1>Create Account</h1><p>Register a FrozenThrone game account.</p></div>
+    <div class="section-head">
+      <h1>Create Account</h1>
+      <p>Register a FrozenThrone game account.</p>
+    </div>
+
     <div class="card highlight form">
       <form method="POST" action="/register">
-        <label for="username">Username</label><input id="username" name="username" placeholder="Username" maxlength="16" required>
-        <label for="email">Email</label><input id="email" name="email" type="email" placeholder="you@example.com">
-        <label for="password">Password</label><input id="password" name="password" type="password" placeholder="Password" required>
-        <label for="confirm_password">Confirm Password</label><input id="confirm_password" name="confirm_password" type="password" placeholder="Confirm Password" required>
+        <label for="realm">Choose Realm</label>
+        <select id="realm" name="realm" required>
+          <option value="both" selected>Both Realms — Recommended</option>
+          <option value="frostborne">FrozenThrone - Frostborne</option>
+          <option value="shadowmourne">FrozenThrone - Shadowmourne</option>
+        </select>
+
+        <label for="username">Username</label>
+        <input id="username" name="username" placeholder="Username" maxlength="16" required>
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com">
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Password" required>
+
+        <label for="confirm_password">Confirm Password</label>
+        <input id="confirm_password" name="confirm_password" type="password" placeholder="Confirm Password" required>
+
         <button class="btn" type="submit">Create Account</button>
       </form>
-      <p class="muted center">Already have an account? <a href="/login">Login here</a>.</p>
+
+      <p class="muted center">
+        Both Realms creates the same username and password on Frostborne and Shadowmourne.
+      </p>
+
+      <p class="muted center">
+        Already have an account? <a href="/login">Login here</a>.
+      </p>
     </div>
   </section></main>`);
 });
@@ -728,30 +798,176 @@ app.post("/register", async (req, res) => {
   const email = String(req.body.email || "").trim();
   const password = String(req.body.password || "");
   const confirm = String(req.body.confirm_password || "");
+  const realmChoice = String(req.body.realm || "both").trim().toLowerCase();
 
-  if (!/^[A-Z0-9]{3,16}$/.test(username)) return render(req, res, "Register", errorCard("Username must be 3-16 letters or numbers."));
-  if (password.length < 4) return render(req, res, "Register", errorCard("Password must be at least 4 characters."));
-  if (password !== confirm) return render(req, res, "Register", errorCard("Passwords do not match."));
+  const createFrostborne =
+    realmChoice === "both" ||
+    realmChoice === "frostborne";
+
+  const createShadowmourne =
+    realmChoice === "both" ||
+    realmChoice === "shadowmourne";
+
+  if (!createFrostborne && !createShadowmourne) {
+    return render(
+      req,
+      res,
+      "Register",
+      errorCard("Please choose a valid realm.")
+    );
+  }
+
+  if (!/^[A-Z0-9]{3,16}$/.test(username)) {
+    return render(
+      req,
+      res,
+      "Register",
+      errorCard("Username must be 3-16 letters or numbers.")
+    );
+  }
+
+  if (password.length < 4) {
+    return render(
+      req,
+      res,
+      "Register",
+      errorCard("Password must be at least 4 characters.")
+    );
+  }
+
+  if (password !== confirm) {
+    return render(
+      req,
+      res,
+      "Register",
+      errorCard("Passwords do not match.")
+    );
+  }
+
+  let frostConn;
+  let shadowConn;
 
   try {
-    const conn = await authDb();
-    const [existing] = await conn.execute("SELECT id FROM account WHERE username = ?", [username]);
-    if (existing.length > 0) {
-      await conn.end();
-      return render(req, res, "Register", errorCard("Account already exists."));
+    if (createFrostborne) {
+      frostConn = await authDb();
     }
-    const { salt, verifier } = makeSrp6(username, password);
-    await conn.execute(
-      "INSERT INTO account (username, salt, verifier, email, reg_mail, expansion) VALUES (?, ?, ?, ?, ?, 2)",
-      [username, salt, verifier, email, email]
+
+    if (createShadowmourne) {
+      shadowConn = await shadowAuthDb();
+    }
+
+    if (frostConn) {
+      const [existing] = await frostConn.execute(
+        "SELECT id FROM account WHERE username = ?",
+        [username]
+      );
+
+      if (existing.length > 0) {
+        return render(
+          req,
+          res,
+          "Register",
+          errorCard(
+            "That username already exists on FrozenThrone - Frostborne."
+          )
+        );
+      }
+    }
+
+    if (shadowConn) {
+      const [existing] = await shadowConn.execute(
+        "SELECT id FROM account WHERE username = ?",
+        [username]
+      );
+
+      if (existing.length > 0) {
+        return render(
+          req,
+          res,
+          "Register",
+          errorCard(
+            "That username already exists on FrozenThrone - Shadowmourne."
+          )
+        );
+      }
+    }
+
+    const { salt, verifier } =
+      makeSrp6(username, password);
+
+    let frostAccount = null;
+
+    if (frostConn) {
+      await frostConn.execute(
+        `INSERT INTO account
+         (username, salt, verifier, email, reg_mail, expansion)
+         VALUES (?, ?, ?, ?, ?, 2)`,
+        [username, salt, verifier, email, email]
+      );
+
+      const [rows] = await frostConn.execute(
+        "SELECT id, username FROM account WHERE username = ?",
+        [username]
+      );
+
+      frostAccount = rows[0];
+    }
+
+    if (shadowConn) {
+      await shadowConn.execute(
+        `INSERT INTO account
+         (username, salt, verifier, email, reg_mail, expansion)
+         VALUES (?, ?, ?, ?, ?, 2)`,
+        [username, salt, verifier, email, email]
+      );
+    }
+
+    if (frostAccount) {
+      createSession(res, frostAccount);
+      return res.redirect("/account");
+    }
+
+    return render(
+      req,
+      res,
+      "Account Created",
+      `<main class="container">
+        <section>
+          <div class="card highlight form">
+            <h1>Shadowmourne Account Created</h1>
+            <p class="lead">
+              Your account was created successfully on FrozenThrone - Shadowmourne.
+            </p>
+            <p>
+              Open the FrozenThrone launcher and select Shadowmourne to play.
+            </p>
+            <a class="btn" href="/download">Download Page</a>
+            <a class="btn secondary" href="/">Return Home</a>
+          </div>
+        </section>
+      </main>`
     );
-    const [rows] = await conn.execute("SELECT id, username FROM account WHERE username = ?", [username]);
-    await conn.end();
-    createSession(res, rows[0]);
-    res.redirect("/account");
   } catch (err) {
-    console.error(err);
-    render(req, res, "Register", errorCard("Registration failed. Check server logs."));
+    console.error("registration failed", err);
+
+    return render(
+      req,
+      res,
+      "Register",
+      errorCard("Registration failed. Check server logs.")
+    );
+  } finally {
+    if (frostConn) {
+      try {
+        await frostConn.end();
+      } catch {}
+    }
+
+    if (shadowConn) {
+      try {
+        await shadowConn.end();
+      } catch {}
+    }
   }
 });
 
@@ -1030,6 +1246,29 @@ app.get("/admin/news", requireGM, async (req, res) => {
       </section>
     </main>
   `);
+});
+
+
+app.get("/api/launcher/news", (req, res) => {
+  const posts = readNewsPosts()
+    .filter(post => post.status === "published")
+    .sort((a, b) => {
+      const pinnedDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+      if (pinnedDiff !== 0) return pinnedDiff;
+
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    })
+    .slice(0, 3)
+    .map(post => ({
+      id: post.id,
+      title: post.title || "FrozenThrone News",
+      type: post.type || post.category || "News",
+      summary: post.summary || "",
+      date: post.createdAt || "",
+      image: post.image || post.heroImage || ""
+    }));
+
+  res.json(posts);
 });
 
 app.get(["/admin/news/new", "/admin/news/:id/edit"], requireGM, async (req, res) => {

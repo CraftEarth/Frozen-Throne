@@ -29,3 +29,9 @@ id_ed25519
 *.bak
 *.old
 *.orig
+*.bak*
+*.backup*
+*.log
+public/launcher/patches/
+public/launcher/images/Glues-WoW-WotLKLogo.blp
+public/launcher/images/login-background-v1.png

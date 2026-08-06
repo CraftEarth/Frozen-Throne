@@ -6087,3 +6087,6 @@ main.container > section:first-of-type {
   transform: scale(1.06);
   z-index: 20;
 }
+
+.steps .step{padding-left:22px}
+.steps .step::before{display:none}
