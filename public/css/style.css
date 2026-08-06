@@ -6315,3 +6315,82 @@ main.container > section:first-of-type {
     max-width: min(190px, 65vw);
   }
 }
+
+/* Vote Token shop */
+.shop-grid {
+  align-items: stretch;
+}
+
+.shop-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-card form {
+  margin-top: auto;
+}
+
+.shop-card label {
+  display: block;
+  margin: 14px 0 6px;
+  color: var(--ice);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.shop-card select {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #071d30;
+  color: #fff;
+}
+
+.shop-card button {
+  width: 100%;
+}
+
+.shop-item-art {
+  width: 76px;
+  height: 76px;
+  margin-bottom: 16px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(215, 182, 106, .58);
+  border-radius: 13px;
+  background: rgba(0, 0, 0, .45);
+  box-shadow: 0 0 18px rgba(93, 188, 255, .2);
+}
+
+.shop-item-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shop-item-art span {
+  font-size: 38px;
+}
+
+.shop-price {
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.shop-card-unavailable {
+  opacity: .68;
+}
+
+.shop-notice,
+.shop-error {
+  margin: 20px 0;
+}
+
+.shop-error {
+  border-color: rgba(255, 92, 92, .62);
+  background: rgba(76, 9, 16, .82);
+}

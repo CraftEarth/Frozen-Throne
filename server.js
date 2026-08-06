@@ -634,7 +634,8 @@ registerShopRoutes(app, {
   esc,
   mysql,
   dbConfig,
-  requireLogin
+  requireLogin,
+  itemIconUrl
 });
 
 
@@ -643,7 +644,8 @@ registerVoteRoutes(app, {
   esc,
   mysql,
   dbConfig,
-  requireLogin
+  requireLogin,
+  getRealm
 });
 
 registerVoteAdminRoutes(app, {
@@ -2322,9 +2324,17 @@ app.post("/admin/mail", requireGM, async (req, res) => {
   const charConn = await characterDb(realm);
   const worldConn = await worldDb(realm);
   const authConn = await authDb("main");
+  let deliveryLock = false;
 
   try {
     await charConn.beginTransaction();
+
+    const [[lockResult]] = await charConn.execute(
+      "SELECT GET_LOCK(?, 10) AS acquired",
+      [`frozenthrone_shop_${realm.key}`]
+    );
+    deliveryLock = Number(lockResult.acquired) === 1;
+    if (!deliveryLock) throw new Error("Could not acquire mail delivery lock");
 
     const [chars] = await charConn.execute(
       "SELECT guid, name, account FROM characters WHERE name = ? AND (deleteDate IS NULL OR deleteDate = 0) LIMIT 1",
@@ -2424,6 +2434,11 @@ app.post("/admin/mail", requireGM, async (req, res) => {
     console.error("admin mail failed", err);
     render(req, res, "Mail Error", errorCard("Mail send failed. Check logs."));
   } finally {
+    if (deliveryLock) {
+      try {
+        await charConn.execute("SELECT RELEASE_LOCK(?)", [`frozenthrone_shop_${realm.key}`]);
+      } catch {}
+    }
     await charConn.end();
     await worldConn.end();
     await authConn.end();
@@ -3897,131 +3912,6 @@ app.get("/admin/logs", requireGM, async (req, res) => {
     render(req, res, "Activity Log Error", errorCard("Activity log failed. Check logs."));
   }
 });
-
-app.get(["/shop", "/shop.html"], requireLogin, (req, res) => {
-  render(req, res, "Shop", `<main class="container"><section>
-    <div class="section-head"><p class="eyebrow">Coming Soon</p><h1>FrozenThrone Shop</h1><p>The shop is account-protected now. Reward delivery logic will be added after vote tokens are finished.</p></div>
-    <div class="grid grid-4">
-      <div class="card"><h3>Mounts</h3><p class="muted">Future cosmetic mounts.</p><a class="btn secondary disabled">Coming Soon</a></div>
-      <div class="card"><h3>Pets</h3><p class="muted">Companion pets and fun extras.</p><a class="btn secondary disabled">Coming Soon</a></div>
-      <div class="card"><h3>Cosmetics</h3><p class="muted">Visual items and vanity rewards.</p><a class="btn secondary disabled">Coming Soon</a></div>
-      <div class="card"><h3>Vote Rewards</h3><p class="muted">Spend earned vote tokens here later.</p><a class="btn gold disabled">Coming Soon</a></div>
-    </div>
-  </section></main>`);
-});
-
-app.get("/vote", requireLogin, async (req, res) => {
-  try {
-    const conn = await mysql.createPool({
-      ...dbConfig,
-      database: "frozenthrone",
-      waitForConnections: true,
-      connectionLimit: 10
-    });
-
-    const [[stats]] = await conn.execute(`
-      SELECT lifetime_votes, vote_tokens, current_streak, last_vote_at,
-             DATE_ADD(last_vote_at, INTERVAL 6 HOUR) AS next_vote_at
-      FROM vote_accounts
-      WHERE account_id = ?
-    `, [req.user.id]);
-
-    const [history] = await conn.execute(`
-      SELECT site, reward_tokens, reward_gold, created_at
-      FROM vote_logs
-      WHERE account_id = ?
-      ORDER BY created_at DESC
-      LIMIT 10
-    `, [req.user.id]);
-
-    const lifetimeVotes = stats?.lifetime_votes || 0;
-    const voteTokens = stats?.vote_tokens || 0;
-    const currentStreak = stats?.current_streak || 0;
-    const lastVote = stats?.last_vote_at ? new Date(stats.last_vote_at).toLocaleString() : "Never";
-    const nextVoteAt = stats?.next_vote_at ? new Date(stats.next_vote_at) : null;
-    const readyToVote = !nextVoteAt || nextVoteAt <= new Date();
-    const nextVoteText = readyToVote ? "Ready Now" : nextVoteAt.toLocaleString();
-
-    const historyRows = history.map(v => `
-      <tr>
-        <td>${esc(v.site)}</td>
-        <td>${esc(new Date(v.created_at).toLocaleString())}</td>
-        <td>${esc(v.reward_tokens)} token</td>
-        <td>${esc(v.reward_gold)} gold</td>
-      </tr>
-    `).join("");
-
-    render(req, res, "Vote", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">FrozenThrone Voting</p>
-            <h1>Vote Rewards</h1>
-            <p>Support FrozenThrone by voting every 6 hours and earn rewards automatically.</p>
-          </div>
-
-          <div class="grid grid-4">
-            <div class="card stat"><span>Lifetime Votes</span><strong>${esc(lifetimeVotes)}</strong></div>
-            <div class="card stat"><span>Vote Tokens</span><strong>${esc(voteTokens)}</strong></div>
-            <div class="card stat"><span>Vote Streak</span><strong>${esc(currentStreak)}</strong></div>
-            <div class="card stat"><span>Last Vote</span><strong>${esc(lastVote)}</strong></div>
-          </div>
-
-          <div class="card highlight">
-            <h2>⏳ Next Vote</h2>
-            <p><strong>${esc(nextVoteText)}</strong></p>
-            <p class="muted">${readyToVote ? "You can vote now." : "Cooldown active. Voting unlocks at the time above."}</p>
-          </div>
-
-          <div class="grid grid-2">
-            <div class="card highlight">
-              <h2>🎁 Every Vote Rewards You With</h2>
-              <ul class="clean-list">
-                <li>🪙 1 Vote Token</li>
-                <li>💰 1 Gold</li>
-              </ul>
-              <p class="muted">You may vote once every <strong>6 hours</strong>.</p>
-              <a class="btn gold" href="/vote/start/topg">Vote on TopG</a>
-            </div>
-
-            <div class="card">
-              <h2>🔥 Vote Streak</h2>
-              <p>Current streak: <strong>${esc(currentStreak)}</strong></p>
-              <hr>
-              <h3>Next Milestone</h3>
-              <p>🏆 <strong>150 Votes</strong><br>Rare Exclusive Mount</p>
-              <p class="muted">Mount rewards stay website/shop-side until unlocked.</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>Recent Vote History</h2>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead><tr><th>Site</th><th>Date</th><th>Tokens</th><th>Gold</th></tr></thead>
-                <tbody>${historyRows || `<tr><td colspan="4">No votes yet.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>How Voting Works</h2>
-            <ol>
-              <li>Login to your FrozenThrone account.</li>
-              <li>Click the Vote button.</li>
-              <li>Vote on TopG.</li>
-              <li>TopG calls FrozenThrone back automatically.</li>
-              <li>Your vote tokens update here.</li>
-            </ol>
-          </div>
-        </section>
-      </main>
-    `);
-  } catch (err) {
-    render(req, res, "Vote Error", `<main class="container"><div class="card"><h3>Vote Error</h3><p>${esc(err.message)}</p></div></main>`);
-  }
-});
-
 
 app.get(["/guilds", "/guilds.html"], async (req, res) => {
   try {
