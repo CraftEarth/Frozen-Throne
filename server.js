@@ -144,8 +144,40 @@ const shadowAuthConfig = {
 };
 
 const realms = [
-  { key: "main", name: "FrozenThrone", db: "characters", port: 8085, public: true },
-  { key: "beta", name: "FrozenThrone Beta", db: "characters_beta", port: 8086, public: false },
+  {
+    key: "main",
+    realm_key: "main",
+    id: 1,
+    realm_id: 1,
+    name: "FrozenThrone",
+    display_name: "FrozenThrone",
+    db: "characters",
+    characters_db: "characters",
+    world_db: "world",
+    auth_db: "auth",
+    port: 8085,
+    public: true,
+    is_production: 1,
+    accessAccountColumn: "AccountID",
+    accessLevelColumn: "SecurityLevel"
+  },
+  {
+    key: "shadowmourne",
+    realm_key: "shadowmourne",
+    id: 3,
+    realm_id: 3,
+    name: "Shadowmourne",
+    display_name: "Shadowmourne",
+    db: "acore_characters",
+    characters_db: "acore_characters",
+    world_db: "acore_world",
+    auth_db: "acore_auth",
+    port: 8087,
+    public: true,
+    is_production: 1,
+    accessAccountColumn: "id",
+    accessLevelColumn: "gmlevel"
+  }
 ];
 
 function esc(value = "") {
@@ -172,15 +204,16 @@ function sign(value) {
   return crypto.createHmac("sha256", SESSION_SECRET).update(value).digest("hex");
 }
 
-function createSession(res, account) {
+function createSession(res, account, realm) {
   const token = crypto.randomBytes(32).toString("hex");
   sessions.set(token, {
     id: account.id,
     username: account.username,
+    realmKey: realm.key,
     createdAt: Date.now(),
   });
   const cookie = `${token}.${sign(token)}`;
-  res.setHeader("Set-Cookie", `ft_session=${encodeURIComponent(cookie)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`);
+  res.append("Set-Cookie", `ft_session=${encodeURIComponent(cookie)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`);
 }
 
 function destroySession(req, res) {
@@ -189,7 +222,7 @@ function destroySession(req, res) {
     const [token] = raw.split(".");
     sessions.delete(token);
   }
-  res.setHeader("Set-Cookie", "ft_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0");
+  res.append("Set-Cookie", "ft_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0");
 }
 
 function getSession(req) {
@@ -202,20 +235,22 @@ function getSession(req) {
 
 app.use((req, res, next) => {
   req.user = getSession(req);
+  req.activeRealm = getActiveRealm(req);
   next();
 });
 
 
-async function getUserSecurityLevel(accountId, realmId = -1) {
+async function getUserSecurityLevel(accountId, realmRef = "main") {
   if (!accountId) return 0;
-  const conn = await authDb();
+  const realm = resolveRealm(realmRef);
+  const conn = await authDb(realm);
   try {
     const [rows] = await conn.execute(
-      `SELECT MAX(SecurityLevel) AS level
+      `SELECT MAX(${realm.accessLevelColumn}) AS level
        FROM account_access
-       WHERE AccountID = ?
+       WHERE ${realm.accessAccountColumn} = ?
        AND (RealmID = -1 OR RealmID = ?)`,
-      [accountId, realmId]
+      [accountId, realm.realm_id]
     );
     return Number(rows?.[0]?.level || 0);
   } finally {
@@ -225,70 +260,69 @@ async function getUserSecurityLevel(accountId, realmId = -1) {
 
 function requireLogin(req, res, next) {
   if (!req.user) return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+  if (req.user.realmKey !== req.activeRealm.key) {
+    destroySession(req, res);
+    return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+  }
   next();
 }
 
-async function authDb() {
-  return mysql.createConnection(dbConfig);
+function getRealm(key) {
+  return realms.find((realm) => realm.key === key || String(realm.id) === String(key)) || null;
+}
+
+function resolveRealm(ref = "main") {
+  if (ref && typeof ref === "object" && ref.key) return getRealm(ref.key) || realms[0];
+  return getRealm(ref) || realms.find((realm) =>
+    [realm.auth_db, realm.characters_db, realm.world_db].includes(String(ref))
+  ) || realms[0];
+}
+
+function realmDbConfig(realmRef = "main") {
+  return resolveRealm(realmRef).key === "shadowmourne" ? shadowAuthConfig : dbConfig;
+}
+
+async function authDb(realmRef = "main") {
+  const realm = resolveRealm(realmRef);
+  return mysql.createConnection({ ...realmDbConfig(realm), database: realm.auth_db });
 }
 
 async function shadowAuthDb() {
-  return mysql.createConnection(shadowAuthConfig);
+  return authDb("shadowmourne");
 }
 
-async function characterDb(database) {
-  return mysql.createConnection({ ...dbConfig, database });
+async function characterDb(databaseOrRealm = "main") {
+  const realm = resolveRealm(databaseOrRealm);
+  const database = getRealm(databaseOrRealm)?.characters_db
+    || (databaseOrRealm && typeof databaseOrRealm === "object" ? realm.characters_db : String(databaseOrRealm));
+  return mysql.createConnection({ ...realmDbConfig(realm), database });
 }
 
-function worldDb(database = process.env.DB_WORLD || "world") {
-  return mysql.createConnection({ ...dbConfig, database });
-}
-
-
-function getCookie(req, name) {
-  const raw = req.headers.cookie || "";
-  return raw.split(";").map(v => v.trim()).reduce((acc, part) => {
-    const idx = part.indexOf("=");
-    if (idx === -1) return acc;
-    const key = decodeURIComponent(part.slice(0, idx));
-    const val = decodeURIComponent(part.slice(idx + 1));
-    acc[key] = val;
-    return acc;
-  }, {})[name];
+function worldDb(databaseOrRealm = "main") {
+  const realm = resolveRealm(databaseOrRealm);
+  const database = getRealm(databaseOrRealm)?.world_db
+    || (databaseOrRealm && typeof databaseOrRealm === "object" ? realm.world_db : String(databaseOrRealm));
+  return mysql.createConnection({ ...realmDbConfig(realm), database });
 }
 
 async function loadRealmConfigs() {
-  const conn = await authDb();
-  try {
-    const [rows] = await conn.execute(
-      `SELECT realm_id, realm_key, display_name, world_db, characters_db, auth_db, is_production, enabled
-       FROM ft_realm_config
-       WHERE enabled = 1
-       ORDER BY is_production DESC, realm_id ASC`
-    );
-    return rows;
-  } finally {
-    await conn.end();
-  }
+  return realms;
 }
 
-async function getActiveRealm(req) {
-  const configs = await loadRealmConfigs();
-  const requested = req.query.realm || getCookie(req, "ft_active_realm");
+function getActiveRealm(req) {
+  if (req.activeRealm) return req.activeRealm;
+  const requested = req.query.realm || parseCookies(req).ft_active_realm;
+  return getRealm(requested) || getRealm("main");
+}
 
-  const found = configs.find(r =>
-    r.realm_key === requested || String(r.realm_id) === String(requested)
-  );
+function safeNext(value, fallback = "/") {
+  const next = String(value || "");
+  return next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
 
-  return found || configs[0] || {
-    realm_id: 1,
-    realm_key: "main",
-    display_name: "FrozenThrone Production",
-    world_db: "world",
-    characters_db: "characters",
-    auth_db: "auth",
-    is_production: 1
-  };
+function publicCharacterFilter(realmRef, alias = "c") {
+  const realm = resolveRealm(realmRef);
+  return `(\n    (${alias}.deleteDate IS NULL OR ${alias}.deleteDate = 0)\n    AND NOT EXISTS (\n      SELECT 1\n      FROM ${realm.auth_db}.account_access website_access\n      WHERE website_access.${realm.accessAccountColumn} = ${alias}.account\n        AND website_access.RealmID IN (-1, ${realm.realm_id})\n        AND website_access.${realm.accessLevelColumn} > 2\n    )\n  )`;
 }
 
 function realmBadge(realm) {
@@ -298,11 +332,6 @@ function realmBadge(realm) {
     <span>Active Realm: ${esc(realm.display_name)}</span>
     <span class="muted">World DB: ${esc(realm.world_db)} · Characters DB: ${esc(realm.characters_db)}</span>
   </div>`;
-}
-
-
-function getRealm(key) {
-  return realms.find((realm) => realm.key === key) || null;
 }
 
 const equipmentSlots = {
@@ -331,8 +360,11 @@ function itemQualityName(id) {
   return ({ 0: "Poor", 1: "Common", 2: "Uncommon", 3: "Rare", 4: "Epic", 5: "Legendary", 6: "Artifact", 7: "Heirloom" })[id] || `Quality ${id}`;
 }
 
-async function databaseExists(database) {
-  const conn = await authDb();
+async function databaseExists(databaseOrRealm) {
+  const realm = resolveRealm(databaseOrRealm);
+  const database = getRealm(databaseOrRealm)?.characters_db
+    || (databaseOrRealm && typeof databaseOrRealm === "object" ? realm.characters_db : String(databaseOrRealm));
+  const conn = await authDb(realm);
   const [rows] = await conn.execute("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?", [database]);
   await conn.end();
   return rows.length > 0;
@@ -407,6 +439,7 @@ function moneyToGold(copper = 0) {
 
 function render(req, res, title, body, options = {}) {
   const user = req.user;
+  const activeRealm = req.activeRealm || getActiveRealm(req);
   const flash = options.flash || "";
   const siteUrl = "https://frozenthrone.co";
   const fullTitle = options.seo?.title || `${title} - FrozenThrone`;
@@ -438,7 +471,10 @@ function copyAdminText(text) {
 <header class="navbar">
   <div class="nav-inner">
     <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
-    <nav class="nav-links">
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="main-navigation">
       ${req.path.startsWith("/admin")
         ? `
           <a href="/admin">Dashboard</a>
@@ -463,7 +499,14 @@ function copyAdminText(text) {
       }
     </nav>
     <div class="nav-actions">
-      <span class="status-dot" id="realm-status-small">Realm</span>
+      <form class="realm-switcher" method="GET" action="/realm/switch">
+        <input type="hidden" name="next" value="${esc(req.originalUrl)}">
+        <label for="header-realm">Realm</label>
+        <select id="header-realm" name="realm" onchange="this.form.submit()" aria-label="Select website realm">
+          ${realms.map(realm => `<option value="${esc(realm.key)}" ${realm.key === activeRealm.key ? "selected" : ""}>${esc(realm.name)}</option>`).join("")}
+        </select>
+      </form>
+      <span class="status-dot" id="realm-status-small">Status</span>
       ${user ? `<a class="btn secondary" href="/account">${esc(user.username)}</a><a class="btn" href="/logout">Logout</a>` : `<a class="btn secondary" href="/login">Login</a><a class="btn" href="/register">Play Now</a>`}
     </div>
   </div>
@@ -471,7 +514,7 @@ function copyAdminText(text) {
 ${flash ? `<div class="container"><div class="alert">${esc(flash)}</div></div>` : ""}
 ${body}
 <footer class="footer">
-  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Production + Beta Development Realm
+  <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Active Realm: ${esc(activeRealm.name)}
   <div class="footer-links">
     <a href="/download">Download</a><a href="/register">Create Account</a><a href="/login">Login</a><a href="/guilds">Guilds</a>
       <a href="/players">Players</a><a href="/account">Account</a>
@@ -487,17 +530,57 @@ async function loadStats(){
     set('accounts', data.accounts ?? '0');
     set('characters', data.characters ?? '0');
     set('online', data.online ?? '0');
-    set('betaCharacters', data.betaCharacters ?? '0');
-    set('realm-status-small', data.status || 'Realm');
+    set('activeRealmName', data.realm || '${esc(activeRealm.name)}');
+    set('realm-status-small', data.status || 'Offline');
   }catch(e){}
 }
 loadStats();
+
+const navbar = document.querySelector('.navbar');
+const navToggle = document.querySelector('.nav-toggle');
+
+function setNavigationOpen(open) {
+  if (!navbar || !navToggle) return;
+  navbar.classList.toggle('nav-open', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+  navToggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+}
+
+if (navToggle) {
+  navToggle.addEventListener('click', () => {
+    setNavigationOpen(!navbar.classList.contains('nav-open'));
+  });
+
+  document.querySelectorAll('#main-navigation a').forEach(link => {
+    link.addEventListener('click', () => setNavigationOpen(false));
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setNavigationOpen(false);
+  });
+}
 </script>
 </body>
 </html>`);
 }
 
 
+
+app.get("/realm/switch", (req, res) => {
+  const requestedRealm = getRealm(String(req.query.realm || ""));
+  if (!requestedRealm) return res.redirect(safeNext(req.query.next, "/"));
+
+  if (req.user && req.user.realmKey !== requestedRealm.key) {
+    destroySession(req, res);
+  }
+
+  res.cookie("ft_active_realm", requestedRealm.key, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 30
+  });
+  res.redirect(safeNext(req.query.next, "/"));
+});
 
 app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
 app.get("/rankings", (req, res) => res.redirect("/players.html"));
@@ -511,6 +594,8 @@ registerArmoryRoutes(app, {
   esc,
   realms,
   getRealm,
+  getActiveRealm,
+  publicCharacterFilter,
   databaseExists,
   characterDb,
   worldDb,
@@ -586,12 +671,16 @@ registerCommunityAdminRoutes(app, {
 
 
 app.get(["/", "/index.html"], (req, res) => {
-  render(req, res, "FrozenThrone | Wrath of the Lich King 3.3.5a Private Server", `<main>
+  const realm = req.activeRealm;
+  const realmDescription = realm.key === "shadowmourne"
+    ? "A living Wrath world filled with player bots and real players, built so you never have to adventure alone."
+    : "The original FrozenThrone Wrath of the Lich King 3.3.5a realm."
+  render(req, res, `${realm.name} | Wrath of the Lich King 3.3.5a Private Server`, `<main>
   <section class="hero">
     <div class="hero-card">
-      <div class="eyebrow">Blizzlike x1 Realm</div>
-      <h1>FrozenThrone</h1>
-      <p class="lead">Wrath of the Lich King 3.3.5a private server with a stable production realm and a separate Beta realm for future features.</p>
+      <div class="eyebrow">Selected Realm</div>
+      <h1>${esc(realm.name)}</h1>
+      <p class="lead">${esc(realmDescription)}</p>
       <p>Realmlist: <code>set realmlist 51.81.87.159</code></p>
       <a class="btn" href="${req.user ? "/account" : "/register"}">${req.user ? "Account Panel" : "Create Account"}</a>
       <a class="btn secondary" href="/download">Download Client</a>
@@ -602,14 +691,14 @@ app.get(["/", "/index.html"], (req, res) => {
       <div class="card stat"><span>Accounts</span><strong id="accounts">0</strong></div>
       <div class="card stat"><span>Characters</span><strong id="characters">0</strong></div>
       <div class="card stat"><span>Online</span><strong id="online">0</strong></div>
-      <div class="card stat"><span>Beta Characters</span><strong id="betaCharacters">0</strong></div>
+      <div class="card stat"><span>Realm</span><strong id="activeRealmName">${esc(realm.name)}</strong></div>
     </div>
   </section>
   <section class="container">
     <div class="grid grid-3">
-      <div class="card highlight"><h3>Production Realm</h3><p class="muted">FrozenThrone is the stable live realm. Player progress here is permanent.</p></div>
-      <div class="card"><h3>Beta Realm</h3><p class="muted">FrozenThrone Beta is for testing. Beta progress does not transfer to production.</p></div>
-      <div class="card"><h3>Account System</h3><p class="muted">Website login now uses TrinityCore auth, preparing the foundation for vote rewards and the shop.</p></div>
+      <div class="card highlight"><h3>${esc(realm.name)}</h3><p class="muted">Every live page, ranking, guild, character, and database search now follows the realm selected in the header.</p></div>
+      <div class="card"><h3>Two Realms, One Website</h3><p class="muted">Switch between FrozenThrone and Shadowmourne at any time from the header.</p></div>
+      <div class="card"><h3>Realm Account Login</h3><p class="muted">Login uses the account database belonging to your selected realm.</p></div>
     </div>
   </section>
 </main>`);
@@ -660,11 +749,11 @@ app.get(["/download", "/download.html"], (req, res) => {
 });
 app.get(["/features", "/features.html"], (req, res) => {
   render(req, res, "Features", `<main class="container"><section>
-    <div class="section-head"><h1>Server Features</h1><p>Wrath 3.3.5a, x1 progression, account tools, and a separate Beta realm for safe development.</p></div>
+    <div class="section-head"><h1>Server Features</h1><p>Two distinct Wrath 3.3.5a realms powered by one realm-aware website and launcher.</p></div>
     <div class="grid grid-3">
       <div class="card"><h3>Wrath 3.3.5a</h3><p class="muted">Northrend, death knights, dungeons, raids, battlegrounds, and classic Wrath gameplay.</p></div>
       <div class="card"><h3>Blizzlike Progression</h3><p class="muted">x1 XP, drops, gold, honor, and reputation.</p></div>
-      <div class="card"><h3>Dual Realm Setup</h3><p class="muted">Production stays safe while new systems are tested on Beta.</p></div>
+      <div class="card"><h3>Dual Realm Setup</h3><p class="muted">Play the original FrozenThrone realm or enter Shadowmourne with player bots and real players.</p></div>
       <div class="card"><h3>Website Accounts</h3><p class="muted">Login is tied to TrinityCore auth, ready for votes and shop rewards.</p></div>
       <div class="card"><h3>Player Rankings</h3><p class="muted">Live top level, gold, kills, and online activity from the character database.</p></div>
       <div class="card"><h3>Future Custom Content</h3><p class="muted">PlayerBots, teleporters, rewards, events, vendors, and custom systems can be tested safely.</p></div>
@@ -896,6 +985,7 @@ app.post("/register", async (req, res) => {
       makeSrp6(username, password);
 
     let frostAccount = null;
+    let shadowAccount = null;
 
     if (frostConn) {
       await frostConn.execute(
@@ -920,10 +1010,29 @@ app.post("/register", async (req, res) => {
          VALUES (?, ?, ?, ?, ?, 2)`,
         [username, salt, verifier, email, email]
       );
+
+      const [rows] = await shadowConn.execute(
+        "SELECT id, username FROM account WHERE username = ?",
+        [username]
+      );
+
+      shadowAccount = rows[0];
     }
 
-    if (frostAccount) {
-      createSession(res, frostAccount);
+    const loginRealm = req.activeRealm.key === "shadowmourne" && shadowAccount
+      ? getRealm("shadowmourne")
+      : frostAccount
+        ? getRealm("main")
+        : getRealm("shadowmourne");
+    const loginAccount = loginRealm.key === "shadowmourne" ? shadowAccount : frostAccount;
+
+    if (loginAccount) {
+      res.cookie("ft_active_realm", loginRealm.key, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 30
+      });
+      createSession(res, loginAccount, loginRealm);
       return res.redirect("/account");
     }
 
@@ -973,8 +1082,9 @@ app.post("/register", async (req, res) => {
 
 app.get("/login", (req, res) => {
   const next = esc(req.query.next || "/account");
+  const realm = req.activeRealm;
   render(req, res, "Login", `<main class="container"><section>
-    <div class="section-head"><h1>Account Login</h1><p>Login with your FrozenThrone game account.</p></div>
+    <div class="section-head"><p class="eyebrow">${esc(realm.name)} Realm</p><h1>Account Login</h1><p>Login with your ${esc(realm.name)} game account.</p></div>
     <div class="card highlight form">
       <form method="POST" action="/login">
         <input type="hidden" name="next" value="${next}">
@@ -990,17 +1100,18 @@ app.get("/login", (req, res) => {
 app.post("/login", async (req, res) => {
   const username = String(req.body.username || "").trim().toUpperCase();
   const password = String(req.body.password || "");
-  const next = String(req.body.next || "/account");
+  const next = safeNext(req.body.next, "/account");
+  const realm = req.activeRealm;
 
   try {
-    const conn = await authDb();
+    const conn = await authDb(realm);
     const [rows] = await conn.execute("SELECT id, username, salt, verifier FROM account WHERE username = ?", [username]);
     await conn.end();
     if (!rows.length || !verifySrp6(username, password, rows[0].salt, rows[0].verifier)) {
       return render(req, res, "Login", errorCard("Invalid username or password."));
     }
-    createSession(res, rows[0]);
-    res.redirect(next.startsWith("/") ? next : "/account");
+    createSession(res, rows[0], realm);
+    res.redirect(next);
   } catch (err) {
     console.error(err);
     render(req, res, "Login", errorCard("Login failed. Check server logs."));
@@ -1014,26 +1125,23 @@ app.get("/logout", (req, res) => {
 
 app.get("/account", requireLogin, async (req, res) => {
   try {
-    const realmBlocks = [];
-    for (const realm of realms) {
-      if (!(await databaseExists(realm.db))) continue;
-      const conn = await characterDb(realm.db);
-      const [chars] = await conn.execute(
-        `SELECT guid, name, race, class, level, money, online, totalKills FROM characters WHERE account = ? AND (deleteDate IS NULL OR deleteDate = 0) ORDER BY level DESC, name ASC`,
-        [req.user.id]
-      );
-      await conn.end();
-      realmBlocks.push(`<div class="card ${realm.public ? "highlight" : ""}"><h3>${esc(realm.name)} ${realm.public ? "" : "<span class='badge'>Beta</span>"}</h3>${chars.length ? `<div class="table-wrap"><table class="rank-table"><thead><tr><th>Name</th><th>Race</th><th>Class</th><th>Level</th><th>Gold</th><th>Status</th></tr></thead><tbody>${chars.map(c => `<tr><td>${esc(c.name)}</td><td>${raceName(c.race)}</td><td>${className(c.class)}</td><td>${c.level}</td><td>${moneyToGold(c.money)}</td><td>${c.online ? "Online" : "Offline"}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No characters on this realm yet.</p>`}</div>`);
-    }
+    const realm = req.activeRealm;
+    const conn = await characterDb(realm);
+    const [chars] = await conn.execute(
+      `SELECT guid, name, race, class, level, money, online, totalKills FROM characters WHERE account = ? AND (deleteDate IS NULL OR deleteDate = 0) ORDER BY level DESC, name ASC`,
+      [req.user.id]
+    );
+    await conn.end();
+    const characterBlock = `<div class="card highlight"><h3>${esc(realm.name)} Characters</h3>${chars.length ? `<div class="table-wrap"><table class="rank-table"><thead><tr><th>Name</th><th>Race</th><th>Class</th><th>Level</th><th>Gold</th><th>Status</th></tr></thead><tbody>${chars.map(c => `<tr><td><a href="/armory/${esc(realm.key)}/${esc(c.guid)}">${esc(c.name)}</a></td><td>${raceName(c.race)}</td><td>${className(c.class)}</td><td>${c.level}</td><td>${moneyToGold(c.money)}</td><td>${c.online ? "Online" : "Offline"}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No characters on this realm yet.</p>`}</div>`;
     render(req, res, "Account", `<main class="container"><section>
-      <div class="section-head"><p class="eyebrow">Account Panel</p><h1>Welcome, ${esc(req.user.username)}</h1><p>Manage your account, view characters, and prepare for votes and shop rewards.</p></div>
+      <div class="section-head"><p class="eyebrow">${esc(realm.name)} Account Panel</p><h1>Welcome, ${esc(req.user.username)}</h1><p>This account ID and every character below belong only to ${esc(realm.name)}.</p></div>
       <div class="grid grid-3">
         <div class="card stat"><span>Account ID</span><strong>${req.user.id}</strong></div>
         <div class="card stat"><span>Vote Tokens</span><strong>Soon</strong></div>
         <div class="card stat"><span>Shop</span><strong>Locked</strong></div>
       </div>
-      <div class="grid grid-2 account-grid">${realmBlocks.join("")}</div>
-      <div class="card"><h3>Important Beta Notice</h3><p class="muted">Progress on FrozenThrone Beta does not transfer to the live FrozenThrone realm. Beta may be reset when testing requires it.</p></div>
+      <div class="account-grid">${characterBlock}</div>
+      <div class="card"><h3>Want the Other Realm?</h3><p class="muted">Use the realm selector in the header. Changing realms safely logs this account out before the other realm login.</p></div>
     </section></main>`);
   } catch (err) {
     console.error(err);
@@ -1049,6 +1157,8 @@ require("./modules/armory/routes")(app, {
   esc,
   realms,
   getRealm,
+  getActiveRealm,
+  publicCharacterFilter,
   databaseExists,
   characterDb,
   worldDb,
@@ -1062,7 +1172,7 @@ require("./modules/armory/routes")(app, {
 async function requireGM(req, res, next) {
   if (!req.user) return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
 
-  const level = await getUserSecurityLevel(req.user.id, -1);
+  const level = await getUserSecurityLevel(req.user.id, req.user.realmKey || "main");
   if (level < 3) {
     return render(req, res, "Access Denied", errorCard("GM access required."));
   }
@@ -1408,8 +1518,8 @@ app.get("/admin", requireGM, async (req, res) => {
     const activeRealm = await getActiveRealm(req);
     const allRealms = await loadRealmConfigs();
 
-    const authConn = await authDb();
-    const activeCharConn = await characterDb(activeRealm.characters_db);
+    const authConn = await authDb(activeRealm);
+    const activeCharConn = await characterDb(activeRealm);
 
     const [accounts] = await authConn.execute("SELECT COUNT(*) AS total FROM account");
     const [activeChars] = await activeCharConn.execute("SELECT COUNT(*) AS total FROM characters WHERE deleteDate IS NULL OR deleteDate = 0");
@@ -1537,9 +1647,9 @@ app.get("/admin/player/:realm/:guid", requireGM, async (req, res) => {
   }
 
   try {
-    const charConn = await characterDb(realm.db);
-    const authConn = await authDb();
-    const worldConn = await worldDb();
+    const charConn = await characterDb(realm);
+    const authConn = await authDb(realm);
+    const worldConn = await worldDb(realm);
 
     const [chars] = await charConn.execute(
       `SELECT *
@@ -1565,7 +1675,10 @@ app.get("/admin/player/:realm/:guid", requireGM, async (req, res) => {
     const acct = accounts[0] || {};
 
     const [gmAccess] = await authConn.execute(
-      "SELECT SecurityLevel, RealmID, Comment FROM account_access WHERE AccountID = ? ORDER BY SecurityLevel DESC",
+      `SELECT ${realm.accessLevelColumn} AS SecurityLevel, RealmID, ${realm.key === "main" ? "Comment" : "''"} AS Comment
+       FROM account_access
+       WHERE ${realm.accessAccountColumn} = ?
+       ORDER BY ${realm.accessLevelColumn} DESC`,
       [ch.account]
     );
 
@@ -1740,9 +1853,9 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
   }
 
   try {
-    const worldConn = await worldDb();
-    const mainConn = await characterDb("characters");
-    const betaConn = await characterDb("characters_beta");
+    const realm = req.activeRealm;
+    const worldConn = await worldDb(realm);
+    const charConn = await characterDb(realm);
 
     const [items] = await worldConn.execute(
       `SELECT *
@@ -1754,14 +1867,13 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
 
     if (!items.length) {
       await worldConn.end();
-      await mainConn.end();
-      await betaConn.end();
+      await charConn.end();
       return render(req, res, "Item Database", errorCard("Item not found."));
     }
 
     const item = items[0];
 
-    const [mainOwners] = await mainConn.execute(
+    const [owners] = await charConn.execute(
       `SELECT c.guid, c.name, c.account, c.level, c.race, c.class, ci.bag, ci.slot, ii.guid AS itemGuid, ii.count
        FROM item_instance ii
        JOIN character_inventory ci ON ci.item = ii.guid
@@ -1772,23 +1884,7 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
       [entry]
     );
 
-    const [betaOwners] = await betaConn.execute(
-      `SELECT c.guid, c.name, c.account, c.level, c.race, c.class, ci.bag, ci.slot, ii.guid AS itemGuid, ii.count
-       FROM item_instance ii
-       JOIN character_inventory ci ON ci.item = ii.guid
-       JOIN characters c ON c.guid = ci.guid
-       WHERE ii.itemEntry = ? AND (c.deleteDate IS NULL OR c.deleteDate = 0)
-       ORDER BY c.name ASC
-       LIMIT 100`,
-      [entry]
-    );
-
-    const [mainCopies] = await mainConn.execute(
-      "SELECT COALESCE(SUM(count), 0) AS total FROM item_instance WHERE itemEntry = ?",
-      [entry]
-    );
-
-    const [betaCopies] = await betaConn.execute(
+    const [copies] = await charConn.execute(
       "SELECT COALESCE(SUM(count), 0) AS total FROM item_instance WHERE itemEntry = ?",
       [entry]
     );
@@ -1815,8 +1911,7 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
     );
 
     await worldConn.end();
-    await mainConn.end();
-    await betaConn.end();
+    await charConn.end();
 
     const statRows = Array.from({ length: 10 }, (_, idx) => {
       const n = idx + 1;
@@ -1836,10 +1931,10 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
       return `<tr><td>${n}</td><td>${esc(spell)}</td><td>${esc(trigger)}</td><td>${esc(charges)}</td><td>${esc(cooldown)}</td></tr>`;
     }).join("");
 
-    const ownerRows = (realmKey, rows) => rows.map(o => `
+    const ownerRows = owners.map(o => `
       <tr>
-        <td>${realmKey === "main" ? "FrozenThrone" : "Beta"}</td>
-        <td><a href="/admin/player/${realmKey}/${o.guid}">${esc(o.name)}</a></td>
+        <td>${esc(realm.name)}</td>
+        <td><a href="/admin/player/${realm.key}/${o.guid}">${esc(o.name)}</a></td>
         <td>${esc(o.guid)}</td>
         <td><a href="/admin/account/${o.account}">${esc(o.account)}</a></td>
         <td>${esc(o.level)}</td>
@@ -1893,8 +1988,7 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
             <div class="card stat"><span>Display ID</span><strong>${esc(item.displayid)}</strong></div>
             <div class="card stat"><span>Item Level</span><strong>${esc(item.ItemLevel)}</strong></div>
             <div class="card stat"><span>Required Level</span><strong>${esc(item.RequiredLevel)}</strong></div>
-            <div class="card stat"><span>Main Copies</span><strong>${esc(mainCopies[0].total)}</strong></div>
-            <div class="card stat"><span>Beta Copies</span><strong>${esc(betaCopies[0].total)}</strong></div>
+            <div class="card stat"><span>${esc(realm.name)} Copies</span><strong>${esc(copies[0].total)}</strong></div>
           </div>
 
           <div class="grid grid-2">
@@ -1989,7 +2083,7 @@ app.get("/admin/item/:entry", requireGM, async (req, res) => {
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Realm</th><th>Character</th><th>GUID</th><th>Account</th><th>Level</th><th>Race</th><th>Class</th><th>Bag</th><th>Slot</th><th>Item GUID</th><th>Count</th></tr></thead>
-                <tbody>${ownerRows("main", mainOwners) + ownerRows("beta", betaOwners) || `<tr><td colspan="11">No owners found.</td></tr>`}</tbody>
+                <tbody>${ownerRows || `<tr><td colspan="11">No owners found.</td></tr>`}</tbody>
               </table>
             </div>
           </div>
@@ -2014,9 +2108,9 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
   }
 
   try {
-    const authConn = await authDb();
-    const mainConn = await characterDb("characters");
-    const betaConn = await characterDb("characters_beta");
+    const realm = req.activeRealm;
+    const authConn = await authDb(realm);
+    const charConn = await characterDb(realm);
 
     const [accounts] = await authConn.execute(
       "SELECT id, username, email, reg_mail, joindate, last_ip, last_attempt_ip, failed_logins, locked, online, expansion FROM account WHERE id = ? LIMIT 1",
@@ -2025,27 +2119,21 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
 
     if (!accounts.length) {
       await authConn.end();
-      await mainConn.end();
-      await betaConn.end();
+      await charConn.end();
       return render(req, res, "Account Inspector", errorCard("Account not found."));
     }
 
     const acct = accounts[0];
 
     const [access] = await authConn.execute(
-      "SELECT SecurityLevel, RealmID, Comment FROM account_access WHERE AccountID = ? ORDER BY SecurityLevel DESC",
+      `SELECT ${realm.accessLevelColumn} AS SecurityLevel, RealmID, ${realm.key === "main" ? "Comment" : "''"} AS Comment
+       FROM account_access
+       WHERE ${realm.accessAccountColumn} = ?
+       ORDER BY ${realm.accessLevelColumn} DESC`,
       [accountId]
     );
 
-    const [mainChars] = await mainConn.execute(
-      `SELECT guid, name, race, class, level, money, online, totalKills, totaltime, logout_time
-       FROM characters
-       WHERE account = ? AND (deleteDate IS NULL OR deleteDate = 0)
-       ORDER BY level DESC, name ASC`,
-      [accountId]
-    );
-
-    const [betaChars] = await betaConn.execute(
+    const [characters] = await charConn.execute(
       `SELECT guid, name, race, class, level, money, online, totalKills, totaltime, logout_time
        FROM characters
        WHERE account = ? AND (deleteDate IS NULL OR deleteDate = 0)
@@ -2054,8 +2142,7 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
     );
 
     await authConn.end();
-    await mainConn.end();
-    await betaConn.end();
+    await charConn.end();
 
     const maxGM = access.length ? Math.max(...access.map(a => Number(a.SecurityLevel || 0))) : 0;
 
@@ -2067,11 +2154,11 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
       </tr>
     `).join("");
 
-    const charRows = (realmKey, rows) => rows.map(c => `
+    const charRows = characters.map(c => `
       <tr>
-        <td>${realmKey === "main" ? "FrozenThrone" : "Beta"}</td>
-        <td><a href="/admin/player/${realmKey}/${c.guid}">${esc(c.name)}</a></td>
-        <td><a href="/armory/${realmKey}/${c.guid}">Armory</a></td>
+        <td>${esc(realm.name)}</td>
+        <td><a href="/admin/player/${realm.key}/${c.guid}">${esc(c.name)}</a></td>
+        <td><a href="/armory/${realm.key}/${c.guid}">Armory</a></td>
         <td>${esc(c.guid)}</td>
         <td>${esc(raceName(c.race))}</td>
         <td>${esc(className(c.class))}</td>
@@ -2094,8 +2181,7 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
           <div class="grid grid-4">
             <div class="card stat"><span>Account ID</span><strong>${esc(acct.id)}</strong></div>
             <div class="card stat"><span>GM Level</span><strong>${esc(maxGM)}</strong></div>
-            <div class="card stat"><span>Main Characters</span><strong>${esc(mainChars.length)}</strong></div>
-            <div class="card stat"><span>Beta Characters</span><strong>${esc(betaChars.length)}</strong></div>
+            <div class="card stat"><span>${esc(realm.name)} Characters</span><strong>${esc(characters.length)}</strong></div>
           </div>
 
           <div class="grid grid-2">
@@ -2135,7 +2221,7 @@ app.get("/admin/account/:id", requireGM, async (req, res) => {
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Realm</th><th>Name</th><th>Armory</th><th>GUID</th><th>Race</th><th>Class</th><th>Level</th><th>Gold</th><th>Status</th><th>Kills</th></tr></thead>
-                <tbody>${charRows("main", mainChars) + charRows("beta", betaChars) || `<tr><td colspan="10">No characters found.</td></tr>`}</tbody>
+                <tbody>${charRows || `<tr><td colspan="10">No characters found.</td></tr>`}</tbody>
               </table>
             </div>
           </div>
@@ -2168,7 +2254,7 @@ app.get("/admin/mail", requireGM, async (req, res) => {
             <label>Realm</label>
             <select name="realm">
               <option value="main">FrozenThrone</option>
-              <option value="beta">FrozenThrone Beta</option>
+              <option value="shadowmourne">Shadowmourne</option>
             </select>
 
             <label>Character Name</label>
@@ -2233,9 +2319,9 @@ app.post("/admin/mail", requireGM, async (req, res) => {
     return render(req, res, "Mail Error", errorCard("Add an item, money, or a message before sending mail."));
   }
 
-  const charConn = await characterDb(realm.db);
-  const worldConn = await worldDb();
-  const authConn = await authDb();
+  const charConn = await characterDb(realm);
+  const worldConn = await worldDb(realm);
+  const authConn = await authDb("main");
 
   try {
     await charConn.beginTransaction();
@@ -2359,9 +2445,10 @@ app.get("/admin/search", requireGM, async (req, res) => {
   let logs = [];
 
   try {
-    const authConn = await authDb();
-    const charConn = await characterDb(activeRealm.characters_db);
-    const worldConn = await worldDb(activeRealm.world_db);
+    const authConn = await authDb(activeRealm);
+    const logConn = await authDb("main");
+    const charConn = await characterDb(activeRealm);
+    const worldConn = await worldDb(activeRealm);
 
     if (q) {
       if (/^\d+$/.test(q)) {
@@ -2464,7 +2551,7 @@ app.get("/admin/search", requireGM, async (req, res) => {
         );
         quests = questRows;
 
-        const [logRows] = await authConn.execute(
+        const [logRows] = await logConn.execute(
           `SELECT id, username, action, details, created_at
            FROM ft_admin_log
            WHERE username LIKE ? OR action LIKE ? OR details LIKE ?
@@ -2477,6 +2564,7 @@ app.get("/admin/search", requireGM, async (req, res) => {
     }
 
     await authConn.end();
+    await logConn.end();
     await charConn.end();
     await worldConn.end();
 
@@ -3937,9 +4025,8 @@ app.get("/vote", requireLogin, async (req, res) => {
 
 app.get(["/guilds", "/guilds.html"], async (req, res) => {
   try {
-    const realm = getRealm(req.query.realm || "main") || getRealm("main");
-    const dbName = realm.characters_db || realm.db || "characters";
-    const conn = await characterDb(dbName);
+    const realm = req.activeRealm;
+    const conn = await characterDb(realm);
 
     const [guilds] = await conn.execute(`
       SELECT 
@@ -3973,7 +4060,7 @@ app.get(["/guilds", "/guilds.html"], async (req, res) => {
           <div class="section-head">
             <p class="eyebrow">${esc(realm.name || realm.realm_key || "Main")} Realm</p>
             <h1>Guilds</h1>
-            <p>Browse active guilds on FrozenThrone.</p>
+            <p>Browse active guilds on ${esc(realm.name)}.</p>
           </div>
 
           <div class="card">
@@ -4004,14 +4091,12 @@ app.get(["/guilds", "/guilds.html"], async (req, res) => {
 
 app.get(["/players", "/players.html"], async (req, res) => {
   try {
-    const conn = await characterDb("characters");
+    const realm = req.activeRealm;
+    const conn = await characterDb(realm);
 
     const publicWhere = `
       FROM characters c
-      LEFT JOIN auth.account_access aa
-        ON aa.AccountID = c.account AND aa.RealmID IN (-1, 0)
-      WHERE (c.deleteDate IS NULL OR c.deleteDate = 0)
-        AND COALESCE(aa.SecurityLevel, 0) <= 2
+      WHERE ${publicCharacterFilter(realm, "c")}
     `;
 
     const [topLevel] = await conn.execute(`
@@ -4046,7 +4131,7 @@ app.get(["/players", "/players.html"], async (req, res) => {
 
     const table = (title, rows, cols) => `<div class="card"><h3>${title}</h3><div class="table-wrap"><table class="rank-table"><tbody>${rows.length ? rows.map((r, i) => `<tr><td>#${i + 1}</td>${cols.map(c => `<td>${c(r)}</td>`).join("")}</tr>`).join("") : `<tr><td class="muted">No data yet.</td></tr>`}</tbody></table></div></div>`;
     render(req, res, "Players | FrozenThrone Armory", `<main class="container"><section>
-      <div class="section-head"><h1>Player Rankings</h1><p>Live rankings pulled from the FrozenThrone production realm.</p></div>
+      <div class="section-head"><p class="eyebrow">${esc(realm.name)} Realm</p><h1>Player Rankings</h1><p>Live rankings pulled from ${esc(realm.name)}.</p></div>
       <div class="grid grid-2">
         ${table("Top Level", topLevel, [r => esc(r.name), r => `Level ${r.level}`, r => className(r.class)])}
         ${table("Top Gold", topGold, [r => esc(r.name), r => `${moneyToGold(r.money)}g`])}
@@ -4062,35 +4147,25 @@ app.get(["/players", "/players.html"], async (req, res) => {
 
 app.get("/stats", async (req, res) => {
   try {
-    const authConn = await authDb();
-    const charConn = await characterDb("characters");
+    const realm = req.activeRealm;
+    const authConn = await authDb(realm);
+    const charConn = await characterDb(realm);
     const [accounts] = await authConn.execute("SELECT COUNT(*) AS total FROM account");
     const [characters] = await charConn.execute(`
       SELECT COUNT(*) AS total
       FROM characters c
-      LEFT JOIN auth.account_access aa
-        ON aa.AccountID = c.account AND aa.RealmID IN (-1, 0)
-      WHERE COALESCE(aa.SecurityLevel, 0) <= 2
+      WHERE ${publicCharacterFilter(realm, "c")}
     `);
     const [online] = await charConn.execute(`
       SELECT COUNT(*) AS total
       FROM characters c
-      LEFT JOIN auth.account_access aa
-        ON aa.AccountID = c.account AND aa.RealmID IN (-1, 0)
       WHERE c.online = 1
-        AND COALESCE(aa.SecurityLevel, 0) <= 2
+        AND ${publicCharacterFilter(realm, "c")}
     `);
     const [uptime] = await authConn.execute("SELECT uptime FROM uptime ORDER BY starttime DESC LIMIT 1");
-    let betaCharacters = 0;
-    if (await databaseExists("characters_beta")) {
-      const betaConn = await characterDb("characters_beta");
-      const [beta] = await betaConn.execute("SELECT COUNT(*) AS total FROM characters");
-      betaCharacters = beta[0].total;
-      await betaConn.end();
-    }
     await authConn.end();
     await charConn.end();
-    res.json({ status: uptime.length > 0 ? "Online" : "Offline", accounts: accounts[0].total, characters: characters[0].total, online: online[0].total, betaCharacters });
+    res.json({ realm: realm.name, status: uptime.length > 0 ? "Online" : "Offline", accounts: accounts[0].total, characters: characters[0].total, online: online[0].total });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "stats failed" });
@@ -4099,14 +4174,12 @@ app.get("/stats", async (req, res) => {
 
 app.get("/api/players", async (req, res) => {
   try {
-    const conn = await characterDb("characters");
+    const realm = req.activeRealm;
+    const conn = await characterDb(realm);
 
     const publicWhere = `
       FROM characters c
-      LEFT JOIN auth.account_access aa
-        ON aa.AccountID = c.account AND aa.RealmID IN (-1, 0)
-      WHERE (c.deleteDate IS NULL OR c.deleteDate = 0)
-        AND COALESCE(aa.SecurityLevel, 0) <= 2
+      WHERE ${publicCharacterFilter(realm, "c")}
     `;
 
     const [topLevel] = await conn.execute(`
@@ -4138,7 +4211,7 @@ app.get("/api/players", async (req, res) => {
     `);
 
     await conn.end();
-    res.json({ topLevel, topGold, topKills, onlineNow });
+    res.json({ realm: realm.name, topLevel, topGold, topKills, onlineNow });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "players failed" });
@@ -4218,10 +4291,11 @@ app.get("/api/armory-viewer/:realm/:guid", async (req, res) => {
     const guid = String(req.params.guid || "").replace(/[^0-9]/g, "");
 
     if (!guid) return res.status(400).json({ error: "Missing guid" });
+    if (!getRealm(realm)) return res.status(400).json({ error: "Invalid realm" });
 
     const root = "/var/www/frozenthrone";
-    const input = `${root}/public/renders/input/character-${guid}.json`;
-    const manifest = `${root}/public/renders/manifests/character-${guid}.json`;
+    const input = `${root}/public/renders/input/character-${realm}-${guid}.json`;
+    const manifest = `${root}/public/renders/manifests/character-${realm}-${guid}.json`;
     const out = `${root}/public/renders/manifests/character-${realm}-${guid}-wowviewer.json`;
 
     const maxAgeMs = 24 * 60 * 60 * 1000;

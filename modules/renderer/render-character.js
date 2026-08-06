@@ -30,7 +30,7 @@ for (const [slot, item] of Object.entries(character.equipment)) {
 console.log("--------------------------------");
 console.log(`Model output: ${character.output.model}`);
 console.log(`Portrait output: ${character.output.portrait}`);
-const manifestPath = `/var/www/frozenthrone/public/renders/manifests/character-${character.guid}.json`;
+const manifestPath = `/var/www/frozenthrone/public/renders/manifests/character-${character.realm}-${character.guid}.json`;
 fs.writeFileSync(manifestPath, JSON.stringify(character, null, 2));
 
 console.log(`Manifest written: ${manifestPath}`);

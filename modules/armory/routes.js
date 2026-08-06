@@ -11,6 +11,8 @@ module.exports = function registerArmoryRoutes(app, tools) {
     esc,
     realms,
     getRealm,
+    getActiveRealm,
+    publicCharacterFilter,
     databaseExists,
     characterDb,
     worldDb,
@@ -71,57 +73,51 @@ app.get(["/armory", "/database"], async (req, res) => {
 app.get("/armory/characters", async (req, res) => {
   try {
     const search = String(req.query.search || "").trim();
-    const cards = [];
+    const realm = getActiveRealm(req);
+    const exists = await databaseExists(realm);
+    if (!exists) return render(req, res, "Armory Error", errorCard(`${realm.name} is unavailable.`));
 
-    for (const realm of realms) {
-      const exists = await databaseExists(realm.db);
-      if (!exists) continue;
-
-      const conn = await characterDb(realm.db);
-      const params = [];
-      let where = "(c.deleteDate IS NULL OR c.deleteDate = 0) AND COALESCE(aa.SecurityLevel, 0) <= 2";
-      if (search) {
-        where += " AND c.name LIKE ?";
-        params.push(`%${search}%`);
-      }
-
-      const [chars] = await conn.execute(
-        `SELECT c.guid, c.account, c.name, c.race, c.class, c.level, c.money, c.online, c.totalKills
-         FROM characters c
-         LEFT JOIN auth.account_access aa
-           ON aa.AccountID = c.account AND aa.RealmID IN (-1, 0)
-         WHERE ${where}
-         ORDER BY c.level DESC, c.name ASC
-         LIMIT 50`,
-        params
-      );
-      await conn.end();
-
-      const rows = chars.map((ch) => `
-        <tr>
-          <td><a href="/armory/${realm.key}/${ch.guid}">${esc(ch.name)}</a></td>
-          <td>${esc(ch.guid)}</td>
-          <td>${esc(ch.account)}</td>
-          <td>${esc(ch.level)}</td>
-          <td>${esc(raceName(ch.race))}</td>
-          <td>${esc(className(ch.class))}</td>
-          <td>${ch.online ? "Online" : "Offline"}</td>
-        </tr>
-      `).join("");
-
-      cards.push(`
-        <div class="card">
-          <h3>${esc(realm.name)}</h3>
-          <p class="muted">Showing character GUIDs, account IDs, and links to exact item IDs.</p>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Name</th><th>GUID</th><th>Account</th><th>Level</th><th>Race</th><th>Class</th><th>Status</th></tr></thead>
-              <tbody>${rows || `<tr><td colspan="7">No characters found.</td></tr>`}</tbody>
-            </table>
-          </div>
-        </div>
-      `);
+    const conn = await characterDb(realm);
+    const params = [];
+    let where = publicCharacterFilter(realm, "c");
+    if (search) {
+      where += " AND c.name LIKE ?";
+      params.push(`%${search}%`);
     }
+
+    const [chars] = await conn.execute(
+      `SELECT c.guid, c.account, c.name, c.race, c.class, c.level, c.money, c.online, c.totalKills
+       FROM characters c
+       WHERE ${where}
+       ORDER BY c.level DESC, c.name ASC
+       LIMIT 50`,
+      params
+    );
+    await conn.end();
+
+    const rows = chars.map((ch) => `
+      <tr>
+        <td><a href="/armory/${realm.key}/${ch.guid}">${esc(ch.name)}</a></td>
+        <td>${esc(ch.guid)}</td>
+        <td>${esc(ch.account)}</td>
+        <td>${esc(ch.level)}</td>
+        <td>${esc(raceName(ch.race))}</td>
+        <td>${esc(className(ch.class))}</td>
+        <td>${ch.online ? "Online" : "Offline"}</td>
+      </tr>
+    `).join("");
+
+    const card = `
+      <div class="card">
+        <h3>${esc(realm.name)}</h3>
+        <p class="muted">Showing character GUIDs, account IDs, and links to exact item IDs.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>GUID</th><th>Account</th><th>Level</th><th>Race</th><th>Class</th><th>Status</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="7">No characters found.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>`;
 
     render(req, res, "Characters Database", databaseFrame(
       "characters",
@@ -135,7 +131,7 @@ app.get("/armory/characters", async (req, res) => {
           </div>
           <button class="ft-btn" type="submit">Search</button>
         </form>
-        <div class="database-results">${cards.join("")}</div>
+        <div class="database-results">${card}</div>
       `
     ));
   } catch (err) {
@@ -150,7 +146,7 @@ app.get("/armory/items", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q) {
@@ -209,7 +205,7 @@ app.get("/armory/npcs", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q) {
@@ -267,7 +263,7 @@ app.get("/armory/quests", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q) {
@@ -331,7 +327,7 @@ app.get("/armory/quest/:id", async (req, res) => {
   }
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
 
     const [rows] = await conn.execute(
       `SELECT *
@@ -394,7 +390,7 @@ app.get("/armory/spells", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q && /^\d+$/.test(q)) {
@@ -462,7 +458,7 @@ app.get("/armory/spell/:id", async (req, res) => {
   }
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
 
     const [rows] = await conn.execute(
       `SELECT *
@@ -537,7 +533,7 @@ app.get("/armory/mounts", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q && /^\d+$/.test(q)) {
@@ -608,7 +604,7 @@ app.get("/armory/achievements", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q && /^\d+$/.test(q)) {
@@ -665,7 +661,7 @@ app.get("/armory/titles", async (req, res) => {
   const q = String(req.query.q || "").trim();
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
     let rows = [];
 
     if (q && /^\d+$/.test(q)) {
@@ -724,7 +720,7 @@ app.get("/armory/item/:entry", async (req, res) => {
   }
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
 
     const [items] = await conn.execute(
       `SELECT *
@@ -915,7 +911,7 @@ app.get("/armory/npc/:entry", async (req, res) => {
   }
 
   try {
-    const conn = await worldDb();
+    const conn = await worldDb(getActiveRealm(req));
 
     const [npcs] = await conn.execute(
       `SELECT * FROM creature_template WHERE entry = ? LIMIT 1`,
@@ -1084,18 +1080,22 @@ app.get("/armory/npc/:entry", async (req, res) => {
 
 app.get("/armory/:realm/:guid", async (req, res) => {
   const realm = getRealm(req.params.realm);
+  const activeRealm = getActiveRealm(req);
   const guid = Number(req.params.guid);
 
   if (!realm || !Number.isInteger(guid) || guid <= 0) {
     return render(req, res, "Character Database", errorCard("Invalid character database request."));
+  }
+  if (realm.key !== activeRealm.key) {
+    return res.redirect("/armory/characters");
   }
 
   let charConn;
   let worldConn;
 
   try {
-    charConn = await characterDb(realm.db);
-    worldConn = await worldDb();
+    charConn = await characterDb(realm);
+    worldConn = await worldDb(realm);
 
     const data = await loadCharacterView(charConn, worldConn, guid);
 
