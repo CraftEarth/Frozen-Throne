@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { SHOP_ITEMS, SHOP_CATEGORIES, getShopItem } = require("./catalog");
+const { SHOP_ITEMS, SHOP_CATEGORIES } = require("./catalog");
 
 module.exports = function registerShopRoutes(app, tools) {
   const {
@@ -50,6 +50,40 @@ module.exports = function registerShopRoutes(app, tools) {
       .replace(/^-|-$/g, "");
   }
 
+  async function loadCatalog(conn, realmKey) {
+    try {
+      const [rows] = await conn.execute(`
+        SELECT
+          item.sku,
+          item.item_entry AS entry,
+          item.name_override AS name,
+          item.description,
+          item.quantity,
+          item.token_cost AS tokenCost,
+          category.name AS category,
+          category.sort_order AS categorySort,
+          item.sort_order AS itemSort
+        FROM frozenthrone.shop_catalog_items item
+        JOIN frozenthrone.shop_categories category
+          ON category.id = item.category_id
+         AND category.active = 1
+        WHERE item.active = 1
+          AND item.realm_key IN ('all', ?)
+        ORDER BY category.sort_order, category.id, item.sort_order, item.id
+      `, [realmKey]);
+      const items = rows.map(row => ({
+        ...row,
+        entry: Number(row.entry),
+        quantity: Number(row.quantity),
+        tokenCost: Number(row.tokenCost)
+      }));
+      return { items, categories: [...new Set(items.map(item => item.category))] };
+    } catch (err) {
+      if (!["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(err.code)) throw err;
+      return { items: SHOP_ITEMS, categories: SHOP_CATEGORIES };
+    }
+  }
+
   function shopCard(item, realmItem, characters, tokens) {
     const quantity = itemQuantity(item);
     const maxStack = Math.max(1, Number(realmItem?.stackable || 1));
@@ -88,6 +122,10 @@ module.exports = function registerShopRoutes(app, tools) {
     const conn = await mysql.createConnection({ ...dbConfig, database: "frozenthrone" });
 
     try {
+      const catalog = await loadCatalog(conn, realm.key);
+      const shopItems = catalog.items;
+      const shopCategories = catalog.categories;
+
       const [[wallet]] = await conn.execute(`
         SELECT vote_tokens, pending_gold
         FROM frozenthrone.vote_accounts
@@ -105,13 +143,13 @@ module.exports = function registerShopRoutes(app, tools) {
         ORDER BY level DESC, name ASC
       `, [req.user.id]);
 
-      const entries = SHOP_ITEMS.map(item => item.entry);
+      const entries = [...new Set(shopItems.map(item => item.entry))];
       const placeholders = entries.map(() => "?").join(",");
-      const [realmItems] = await conn.execute(`
-        SELECT entry, name, displayid, Quality, stackable
-        FROM ${worldDb}.item_template
-        WHERE entry IN (${placeholders})
-      `, entries);
+      const [realmItems] = entries.length ? await conn.execute(`
+          SELECT entry, name, displayid, Quality, stackable
+          FROM ${worldDb}.item_template
+          WHERE entry IN (${placeholders})
+        `, entries) : [[]];
       const itemMap = new Map(realmItems.map(item => [Number(item.entry), item]));
 
       const [history] = await conn.execute(`
@@ -160,16 +198,16 @@ module.exports = function registerShopRoutes(app, tools) {
               <h2>Shop Categories</h2>
             </header>
             <nav class="shop-category-nav" aria-label="Shop categories">
-              ${SHOP_CATEGORIES.map(category => {
-                const total = SHOP_ITEMS.filter(item => item.category === category).length;
+              ${shopCategories.map(category => {
+                const total = shopItems.filter(item => item.category === category).length;
                 return `<a href="#shop-${esc(categorySlug(category))}"><strong>${esc(category)}</strong><span>${esc(total)} item${total === 1 ? "" : "s"}</span></a>`;
               }).join("")}
             </nav>
           </section>
 
           <div class="shop-catalog">
-            ${SHOP_CATEGORIES.map(category => {
-              const items = SHOP_ITEMS.filter(item => item.category === category);
+            ${shopCategories.map(category => {
+              const items = shopItems.filter(item => item.category === category);
               if (!items.length) return "";
               return `
                 <section class="shop-category-section category-${esc(categorySlug(category))}" id="shop-${esc(categorySlug(category))}">
@@ -207,11 +245,11 @@ module.exports = function registerShopRoutes(app, tools) {
 
   app.post("/shop/purchase", requireLogin, async (req, res) => {
     const realm = req.activeRealm;
-    const item = getShopItem(req.body.sku);
+    const sku = String(req.body.sku || "");
     const characterGuid = Number(req.body.characterGuid);
     const purchaseKey = String(req.body.purchaseKey || "");
 
-    if (!item || !Number.isSafeInteger(characterGuid) || characterGuid < 1 || !/^[a-f0-9]{64}$/.test(purchaseKey)) {
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(sku) || !Number.isSafeInteger(characterGuid) || characterGuid < 1 || !/^[a-f0-9]{64}$/.test(purchaseKey)) {
       return res.redirect("/shop?error=invalid");
     }
 
@@ -220,6 +258,38 @@ module.exports = function registerShopRoutes(app, tools) {
 
     try {
       await conn.beginTransaction();
+
+      const [[catalogItem]] = await conn.execute(`
+        SELECT
+          item.sku,
+          item.item_entry AS entry,
+          item.name_override AS name,
+          item.description,
+          item.quantity,
+          item.token_cost AS tokenCost,
+          category.name AS category
+        FROM frozenthrone.shop_catalog_items item
+        JOIN frozenthrone.shop_categories category
+          ON category.id = item.category_id
+         AND category.active = 1
+        WHERE item.sku = ?
+          AND item.active = 1
+          AND item.realm_key IN ('all', ?)
+        LIMIT 1
+        FOR UPDATE
+      `, [sku, realm.key]);
+
+      if (!catalogItem) {
+        await conn.rollback();
+        return res.redirect("/shop?error=invalid");
+      }
+
+      const item = {
+        ...catalogItem,
+        entry: Number(catalogItem.entry),
+        quantity: Number(catalogItem.quantity),
+        tokenCost: Number(catalogItem.tokenCost)
+      };
 
       await conn.execute(`
         INSERT IGNORE INTO frozenthrone.vote_accounts
