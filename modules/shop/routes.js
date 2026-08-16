@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { SHOP_ITEMS, getShopItem } = require("./catalog");
+const { SHOP_ITEMS, SHOP_CATEGORIES, getShopItem } = require("./catalog");
 
 module.exports = function registerShopRoutes(app, tools) {
   const {
@@ -34,8 +34,26 @@ module.exports = function registerShopRoutes(app, tools) {
     `).join("");
   }
 
+  function itemQuantity(item) {
+    const quantity = Number(item?.quantity || 1);
+    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000) {
+      throw new Error(`Invalid shop quantity for ${item?.sku || "unknown item"}`);
+    }
+    return quantity;
+  }
+
+  function categorySlug(value) {
+    return String(value || "category")
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
   function shopCard(item, realmItem, characters, tokens) {
-    const available = Boolean(realmItem) && characters.length > 0;
+    const quantity = itemQuantity(item);
+    const maxStack = Math.max(1, Number(realmItem?.stackable || 1));
+    const available = Boolean(realmItem) && maxStack >= quantity && characters.length > 0;
     const canAfford = Number(tokens) >= item.tokenCost;
     const nonce = crypto.randomBytes(32).toString("hex");
     const iconUrl = realmItem ? itemIconUrl(realmItem.displayid) : "";
@@ -47,8 +65,9 @@ module.exports = function registerShopRoutes(app, tools) {
         </div>
         <p class="eyebrow">${esc(item.category)}</p>
         <h3>${esc(realmItem?.name || item.name)}</h3>
+        <span class="shop-quantity">Quantity: ${esc(quantity)}</span>
         <p class="muted">${esc(item.description)}</p>
-        <p class="shop-price">${esc(item.tokenCost)} Vote Tokens</p>
+        <p class="shop-price">${esc(item.tokenCost)} Vote Token${item.tokenCost === 1 ? "" : "s"}</p>
         <form method="POST" action="/shop/purchase" onsubmit="return confirm('Spend these Vote Tokens and mail this reward?')">
           <input type="hidden" name="sku" value="${esc(item.sku)}">
           <input type="hidden" name="purchaseKey" value="${nonce}">
@@ -89,14 +108,14 @@ module.exports = function registerShopRoutes(app, tools) {
       const entries = SHOP_ITEMS.map(item => item.entry);
       const placeholders = entries.map(() => "?").join(",");
       const [realmItems] = await conn.execute(`
-        SELECT entry, name, displayid, Quality
+        SELECT entry, name, displayid, Quality, stackable
         FROM ${worldDb}.item_template
         WHERE entry IN (${placeholders})
       `, entries);
       const itemMap = new Map(realmItems.map(item => [Number(item.entry), item]));
 
       const [history] = await conn.execute(`
-        SELECT id, character_name, item_name, token_cost, created_at
+        SELECT id, character_name, item_name, quantity, token_cost, created_at
         FROM frozenthrone.shop_purchases
         WHERE realm_key = ? AND account_id = ?
         ORDER BY id DESC
@@ -111,7 +130,7 @@ module.exports = function registerShopRoutes(app, tools) {
       const historyRows = history.map(row => `
         <tr>
           <td>#${esc(row.id)}</td>
-          <td>${esc(row.item_name)}</td>
+          <td>${esc(row.item_name)} <span class="shop-history-quantity">×${esc(row.quantity || 1)}</span></td>
           <td>${esc(row.character_name)}</td>
           <td>${esc(row.token_cost)}</td>
           <td>${esc(new Date(row.created_at).toLocaleString())}</td>
@@ -135,9 +154,37 @@ module.exports = function registerShopRoutes(app, tools) {
             <div class="card stat"><span>Pending Vote Gold</span><strong>${esc(pendingGold)}g</strong></div>
           </div>
 
-          <section class="grid grid-2 shop-grid">
-            ${SHOP_ITEMS.map(item => shopCard(item, itemMap.get(item.entry), characters, tokens)).join("")}
+          <section class="shop-category-nav-wrap">
+            <header>
+              <p class="eyebrow">Browse the Marketplace</p>
+              <h2>Shop Categories</h2>
+            </header>
+            <nav class="shop-category-nav" aria-label="Shop categories">
+              ${SHOP_CATEGORIES.map(category => {
+                const total = SHOP_ITEMS.filter(item => item.category === category).length;
+                return `<a href="#shop-${esc(categorySlug(category))}"><strong>${esc(category)}</strong><span>${esc(total)} item${total === 1 ? "" : "s"}</span></a>`;
+              }).join("")}
+            </nav>
           </section>
+
+          <div class="shop-catalog">
+            ${SHOP_CATEGORIES.map(category => {
+              const items = SHOP_ITEMS.filter(item => item.category === category);
+              if (!items.length) return "";
+              return `
+                <section class="shop-category-section category-${esc(categorySlug(category))}" id="shop-${esc(categorySlug(category))}">
+                  <header class="shop-category-head">
+                    <p class="eyebrow">FrozenThrone Supplies</p>
+                    <h2>${esc(category)}</h2>
+                    <span>${esc(items.length)} reward${items.length === 1 ? "" : "s"}</span>
+                  </header>
+                  <div class="grid grid-2 shop-grid">
+                    ${items.map(item => shopCard(item, itemMap.get(item.entry), characters, tokens)).join("")}
+                  </div>
+                </section>
+              `;
+            }).join("")}
+          </div>
 
           <section class="card">
             <h2>Recent Purchases</h2>
@@ -226,13 +273,20 @@ module.exports = function registerShopRoutes(app, tools) {
       }
 
       const [[realmItem]] = await conn.execute(`
-        SELECT entry, name, displayid, Quality
+        SELECT entry, name, displayid, Quality, stackable
         FROM ${worldDb}.item_template
         WHERE entry = ?
         LIMIT 1
       `, [item.entry]);
 
       if (!realmItem) {
+        await conn.rollback();
+        return res.redirect("/shop?error=item");
+      }
+
+      const quantity = itemQuantity(item);
+      const maxStack = Math.max(1, Number(realmItem.stackable || 1));
+      if (quantity > maxStack) {
         await conn.rollback();
         return res.redirect("/shop?error=item");
       }
@@ -259,8 +313,8 @@ module.exports = function registerShopRoutes(app, tools) {
       await conn.execute(`
         INSERT INTO ${charactersDb}.item_instance
           (guid, itemEntry, owner_guid, creatorGuid, giftCreatorGuid, count, duration, charges, flags, enchantments, randomPropertyId, durability, playedTime, text)
-        VALUES (?, ?, ?, 0, 0, 1, 0, '', 0, '', 0, 0, 0, NULL)
-      `, [itemGuid, item.entry, character.guid]);
+        VALUES (?, ?, ?, 0, 0, ?, 0, '', 0, '', 0, 0, 0, NULL)
+      `, [itemGuid, item.entry, character.guid, quantity]);
 
       await conn.execute(`
         INSERT INTO ${charactersDb}.mail
@@ -270,7 +324,7 @@ module.exports = function registerShopRoutes(app, tools) {
         mailId,
         character.guid,
         "FrozenThrone Shop Purchase",
-        `Thank you for supporting ${realm.name}! Your ${realmItem.name} is attached.`,
+        `Thank you for supporting ${realm.name}! Your ${realmItem.name} ×${quantity} is attached.`,
         expire,
         now
       ]);
@@ -292,7 +346,7 @@ module.exports = function registerShopRoutes(app, tools) {
         INSERT INTO frozenthrone.shop_purchases
           (idempotency_key, realm_key, account_id, username, character_guid, character_name,
            sku, item_entry, item_name, quantity, token_cost, mail_id, item_guid, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, 'delivered')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'delivered')
       `, [
         purchaseKey,
         realm.key,
@@ -303,6 +357,7 @@ module.exports = function registerShopRoutes(app, tools) {
         item.sku,
         item.entry,
         realmItem.name,
+        quantity,
         item.tokenCost,
         mailId,
         itemGuid
