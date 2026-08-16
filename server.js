@@ -29,6 +29,7 @@ const registerVoteRoutes = require("./modules/votes/routes");
 const registerVoteAdminRoutes = require("./modules/votes/admin-routes");
 const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
 const registerNewsRoutes = require("./modules/news/routes");
+const registerHomeRoutes = require("./modules/home/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -684,38 +685,12 @@ registerNewsRoutes(app, {
 
 
 
-app.get(["/", "/index.html"], (req, res) => {
-  const realm = req.activeRealm;
-  const realmDescription = realm.key === "shadowmourne"
-    ? "A living Wrath world filled with player bots and real players, built so you never have to adventure alone."
-    : "The original FrozenThrone Wrath of the Lich King 3.3.5a realm."
-  render(req, res, `${realm.name} | Wrath of the Lich King 3.3.5a Private Server`, `<main>
-  <section class="hero">
-    <div class="hero-card">
-      <div class="eyebrow">Selected Realm</div>
-      <h1>${esc(realm.name)}</h1>
-      <p class="lead">${esc(realmDescription)}</p>
-      <p>Realmlist: <code>set realmlist frozenthrone.co</code></p>
-      <a class="btn" href="${req.user ? "/account" : "/register"}">${req.user ? "Account Panel" : "Create Account"}</a>
-      <a class="btn secondary" href="/download">Download Client</a>
-    </div>
-  </section>
-  <section class="container">
-    <div class="grid grid-4">
-      <div class="card stat"><span>Accounts</span><strong id="accounts">0</strong></div>
-      <div class="card stat"><span>Characters</span><strong id="characters">0</strong></div>
-      <div class="card stat"><span>Online</span><strong id="online">0</strong></div>
-      <div class="card stat"><span>Realm</span><strong id="activeRealmName">${esc(realm.name)}</strong></div>
-    </div>
-  </section>
-  <section class="container">
-    <div class="grid grid-3">
-      <div class="card highlight"><h3>${esc(realm.name)}</h3><p class="muted">Every live page, ranking, guild, character, and database search now follows the realm selected in the header.</p></div>
-      <div class="card"><h3>Two Realms, One Website</h3><p class="muted">Switch between FrozenThrone and Shadowmourne at any time from the header.</p></div>
-      <div class="card"><h3>Realm Account Login</h3><p class="muted">Login uses the account database belonging to your selected realm.</p></div>
-    </div>
-  </section>
-</main>`);
+registerHomeRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig,
+  authDb
 });
 
 app.get(["/download", "/download.html"], (req, res) => {

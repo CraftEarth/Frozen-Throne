@@ -1,0 +1,546 @@
+/* FrozenThrone realm-aware home portal */
+
+.home-page {
+  overflow: hidden;
+}
+
+.home-hero {
+  position: relative;
+  min-height: 610px;
+  display: flex;
+  align-items: flex-end;
+  isolation: isolate;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(102, 198, 255, .32);
+  background: #020813;
+}
+
+.home-hero-video,
+.home-hero-shade {
+  position: absolute;
+  inset: 0;
+}
+
+.home-hero-video {
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: url('/images/frozenthrone-bg.jpeg') center/cover no-repeat;
+}
+
+.home-hero-shade {
+  z-index: -2;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(21, 135, 207, .12), transparent 37%),
+    linear-gradient(90deg, rgba(1, 7, 14, .92) 0%, rgba(1, 8, 17, .58) 48%, rgba(1, 8, 17, .74) 100%),
+    linear-gradient(0deg, #06101c 0%, transparent 46%);
+}
+
+.home-hero-content {
+  width: 100%;
+  padding-top: 120px;
+  padding-bottom: 94px;
+}
+
+.home-realm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 17px;
+  padding: 7px 12px;
+  border: 1px solid rgba(102, 198, 255, .46);
+  background: rgba(0, 13, 25, .74);
+  color: #d9f3ff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.home-realm-pill span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ee48b;
+  box-shadow: 0 0 12px rgba(78, 228, 139, .9);
+}
+
+.home-hero h1 {
+  max-width: 850px;
+  margin-bottom: 16px;
+  font-size: clamp(48px, 6vw, 86px);
+  letter-spacing: -2px;
+}
+
+.home-hero-lead {
+  max-width: 760px;
+  margin: 0 0 24px;
+  color: #d8edff;
+  font-size: clamp(17px, 2vw, 22px);
+  line-height: 1.55;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .9);
+}
+
+.home-hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-sound-button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(136, 207, 247, .38);
+  border-radius: 8px;
+  background: rgba(2, 15, 27, .82);
+  color: #d9f3ff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  backdrop-filter: blur(7px);
+}
+
+.home-sound-button:hover {
+  border-color: rgba(136, 207, 247, .75);
+  color: #fff;
+}
+
+.home-realmlist {
+  margin: 18px 0 0;
+  color: #9ebbd0;
+  font-size: 13px;
+}
+
+.home-stats {
+  position: relative;
+  z-index: 3;
+  margin-top: -42px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid rgba(102, 198, 255, .4);
+  background: rgba(1, 11, 21, .94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .42), 0 0 30px rgba(30, 149, 222, .1);
+  backdrop-filter: blur(12px);
+}
+
+.home-stats > div {
+  min-width: 0;
+  padding: 21px 18px;
+  text-align: center;
+}
+
+.home-stats > div + div {
+  border-left: 1px solid rgba(102, 198, 255, .2);
+}
+
+.home-stats span,
+.home-stats strong {
+  display: block;
+}
+
+.home-stats span {
+  margin-bottom: 4px;
+  color: #85aac2;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+
+.home-stats strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-news-section,
+.home-community-grid {
+  padding-top: 74px;
+}
+
+.home-section-heading,
+.home-panel-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.home-section-heading {
+  margin-bottom: 24px;
+}
+
+.home-section-heading .eyebrow,
+.home-panel-heading .eyebrow {
+  margin: 0 0 6px;
+}
+
+.home-section-heading h2,
+.home-panel-heading h2 {
+  margin: 0;
+}
+
+.home-section-link,
+.home-panel-heading > a {
+  flex: 0 0 auto;
+  color: #8fd4ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.home-news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.home-news-card {
+  overflow: hidden;
+  border: 1px solid rgba(102, 198, 255, .28);
+  background: linear-gradient(180deg, rgba(7, 30, 49, .92), rgba(2, 12, 23, .96));
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .28);
+  transition: transform .2s ease, border-color .2s ease;
+}
+
+.home-news-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(127, 211, 255, .6);
+}
+
+.home-news-image {
+  position: relative;
+  display: block;
+  height: 190px;
+  overflow: hidden;
+}
+
+.home-news-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(1, 9, 17, .78), transparent 68%);
+}
+
+.home-news-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+
+.home-news-card:hover .home-news-image img {
+  transform: scale(1.04);
+}
+
+.home-news-image span {
+  position: absolute;
+  z-index: 1;
+  left: 14px;
+  bottom: 13px;
+  padding: 5px 8px;
+  border: 1px solid rgba(158, 220, 255, .46);
+  background: rgba(0, 16, 29, .84);
+  color: #d9f3ff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.home-news-copy {
+  padding: 19px 20px 21px;
+}
+
+.home-date {
+  margin: 0 0 7px;
+  color: #d7b66a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.home-news-copy h3 {
+  min-height: 51px;
+  margin-bottom: 10px;
+  font-size: 21px;
+}
+
+.home-news-copy h3 a {
+  color: #fff;
+}
+
+.home-news-copy > p:not(.home-date) {
+  min-height: 69px;
+  margin: 0 0 15px;
+  color: #9ebbd0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.home-text-link {
+  color: #8fd4ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.home-community-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, .75fr);
+  gap: 20px;
+}
+
+.home-panel {
+  min-width: 0;
+  padding: 23px;
+  border: 1px solid rgba(102, 198, 255, .27);
+  background: rgba(2, 13, 24, .91);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .25);
+}
+
+.home-panel-heading {
+  margin-bottom: 18px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid rgba(102, 198, 255, .18);
+}
+
+.home-panel-heading h2 {
+  font-size: 27px;
+}
+
+.home-forum-list,
+.home-member-list {
+  display: grid;
+}
+
+.home-forum-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 8px;
+  color: #eaf7ff;
+}
+
+.home-forum-row + .home-forum-row,
+.home-member-row + .home-member-row {
+  border-top: 1px solid rgba(102, 198, 255, .12);
+}
+
+.home-forum-row:hover {
+  background: rgba(79, 173, 231, .08);
+  text-shadow: none;
+}
+
+.home-forum-icon,
+.home-member-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(102, 198, 255, .31);
+  background: linear-gradient(180deg, rgba(16, 62, 92, .9), rgba(3, 24, 42, .95));
+}
+
+.home-forum-copy,
+.home-forum-copy strong,
+.home-forum-copy small,
+.home-member-row > span:last-child,
+.home-member-row strong,
+.home-member-row small {
+  display: block;
+  min-width: 0;
+}
+
+.home-forum-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-forum-copy small,
+.home-member-row small {
+  margin-top: 3px;
+  color: #82a7bf;
+  font-size: 12px;
+}
+
+.home-forum-meta {
+  text-align: center;
+}
+
+.home-forum-meta strong,
+.home-forum-meta small {
+  display: block;
+}
+
+.home-forum-meta strong {
+  color: #dff5ff;
+  font-size: 19px;
+}
+
+.home-forum-meta small {
+  color: #769bb3;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.home-member-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 13px 4px;
+}
+
+.home-member-avatar {
+  border-radius: 50%;
+  color: #dff5ff;
+  font-weight: 900;
+  box-shadow: 0 0 14px rgba(67, 171, 235, .14);
+}
+
+.home-member-row strong {
+  overflow: hidden;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-final-cta {
+  margin-top: 74px;
+  margin-bottom: 18px;
+  padding-top: 34px;
+  padding-bottom: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  border-top: 1px solid rgba(102, 198, 255, .25);
+  border-bottom: 1px solid rgba(102, 198, 255, .25);
+  background: linear-gradient(90deg, rgba(6, 38, 63, .5), rgba(2, 12, 23, .16));
+}
+
+.home-final-cta h2 {
+  margin-bottom: 8px;
+}
+
+.home-final-cta p:not(.eyebrow) {
+  margin: 0;
+  color: #9ebbd0;
+}
+
+.home-final-cta > div:last-child {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 9px;
+}
+
+.home-empty {
+  grid-column: 1 / -1;
+  padding: 28px;
+  border: 1px dashed rgba(102, 198, 255, .28);
+  color: #9ebbd0;
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  .home-news-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-news-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .home-community-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-hero {
+    min-height: 560px;
+  }
+
+  .home-hero-content {
+    padding-top: 92px;
+    padding-bottom: 78px;
+  }
+
+  .home-hero h1 {
+    font-size: clamp(42px, 13vw, 62px);
+  }
+
+  .home-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: -28px;
+  }
+
+  .home-stats > div + div {
+    border-left: 0;
+  }
+
+  .home-stats > div:nth-child(even) {
+    border-left: 1px solid rgba(102, 198, 255, .2);
+  }
+
+  .home-stats > div:nth-child(n+3) {
+    border-top: 1px solid rgba(102, 198, 255, .2);
+  }
+
+  .home-news-section,
+  .home-community-grid {
+    padding-top: 58px;
+  }
+
+  .home-news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-news-card:last-child {
+    grid-column: auto;
+  }
+
+  .home-section-heading,
+  .home-panel-heading,
+  .home-final-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .home-final-cta > div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 460px) {
+  .home-hero-actions .btn,
+  .home-sound-button {
+    width: 100%;
+  }
+
+  .home-forum-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .home-forum-meta {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-news-card,
+  .home-news-image img {
+    transition: none;
+  }
+}

@@ -62,6 +62,7 @@ module.exports = function registerNewsRoutes(app, tools) {
           status: "draft",
           pinned: false,
           featured: false,
+          realmKey: "all",
           heroImage: "/images/frozenthrone-bg.jpeg",
           createdAt: new Date().toISOString().slice(0, 10)
         };
@@ -93,6 +94,13 @@ module.exports = function registerNewsRoutes(app, tools) {
 
               <label>Content Type</label>
               <select name="type">${typeOptions}</select>
+
+              <label>Realm Scope</label>
+              <select name="realmKey">
+                <option value="all" ${(post.realmKey || "all") === "all" ? "selected" : ""}>All Realms</option>
+                <option value="main" ${post.realmKey === "main" ? "selected" : ""}>FrozenThrone</option>
+                <option value="shadowmourne" ${post.realmKey === "shadowmourne" ? "selected" : ""}>Shadowmourne</option>
+              </select>
 
               <label>Summary</label>
               <input name="summary" value="${esc(post.summary || "")}">
@@ -134,6 +142,7 @@ module.exports = function registerNewsRoutes(app, tools) {
       title: String(req.body.title || "Untitled").trim(),
       slug: slugify(req.body.slug || req.body.title),
       type: CONTENT_TYPES.includes(req.body.type) ? req.body.type : "News",
+      realmKey: ["main", "shadowmourne"].includes(req.body.realmKey) ? req.body.realmKey : "all",
       summary: String(req.body.summary || "").trim(),
       body: String(req.body.body || "").trim(),
       status: req.body.status === "published" ? "published" : "draft",
