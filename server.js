@@ -625,7 +625,10 @@ registerCommunityRoutes(app, {
   dbConfig,
   mysql,
   requireLogin,
-  requireGM
+  requireGM,
+  getRealm,
+  authDb,
+  characterDb
 });
 
 registerDatabaseRoutes(app, {
