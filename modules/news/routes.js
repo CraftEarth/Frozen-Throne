@@ -1,7 +1,10 @@
 const { CONTENT_TYPES, readPosts, writePosts, slugify } = require("./engine");
+const registerPublicNewsRoutes = require("./public-routes");
 
 module.exports = function registerNewsRoutes(app, tools) {
   const { render, requireGM, esc, errorCard } = tools;
+
+  registerPublicNewsRoutes(app, { render, esc, errorCard });
 
   app.get("/admin/content", requireGM, (req, res) => {
     const posts = readPosts().sort((a, b) => Number(b.id) - Number(a.id));
