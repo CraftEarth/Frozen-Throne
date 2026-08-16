@@ -30,6 +30,7 @@ const registerVoteAdminRoutes = require("./modules/votes/admin-routes");
 const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
 const registerNewsRoutes = require("./modules/news/routes");
 const registerHomeRoutes = require("./modules/home/routes");
+const registerAdminControlRoutes = require("./modules/admin/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -213,6 +214,7 @@ function createSession(res, account, realm) {
     username: account.username,
     realmKey: realm.key,
     createdAt: Date.now(),
+    csrfToken: crypto.randomBytes(32).toString("hex"),
   });
   const cookie = `${token}.${sign(token)}`;
   res.append("Set-Cookie", `ft_session=${encodeURIComponent(cookie)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`);
@@ -265,6 +267,45 @@ function requireLogin(req, res, next) {
   if (req.user.realmKey !== req.activeRealm.key) {
     destroySession(req, res);
     return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+  }
+  next();
+}
+
+function ownerUsernames() {
+  return new Set(
+    String(process.env.ADMIN_OWNER_USERS || "GrandpaGamer")
+      .split(",")
+      .map(value => value.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+function isAdminOwner(req) {
+  return Boolean(req.user?.username) && ownerUsernames().has(String(req.user.username).toLowerCase());
+}
+
+async function requireOwner(req, res, next) {
+  if (!req.user) return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
+
+  const level = await getUserSecurityLevel(req.user.id, req.user.realmKey || "main");
+  if (level < 3 || !isAdminOwner(req)) {
+    return render(req, res, "Access Denied", errorCard("Master administrator access required."));
+  }
+
+  req.user.securityLevel = level;
+  next();
+}
+
+function csrfField(req) {
+  return `<input type="hidden" name="_csrf" value="${esc(req.user?.csrfToken || "")}">`;
+}
+
+function requireAdminCsrf(req, res, next) {
+  const expected = String(req.user?.csrfToken || "");
+  const supplied = String(req.body?._csrf || "");
+  if (!expected || !supplied || expected.length !== supplied.length ||
+      !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))) {
+    return res.status(403).send("Invalid or expired admin action token. Reload the page and try again.");
   }
   next();
 }
@@ -485,10 +526,11 @@ function copyAdminText(text) {
         ? `
           <a href="/admin">Dashboard</a>
           <a href="/admin/search">Search</a>
-          <a href="/admin/npcs">NPCs</a>
-          <a href="/admin/items">Items</a>
-          <a href="/admin/quests">Quests</a>
-          <a href="/admin/mail">Mail</a>
+          <a href="/admin/content">Content</a>
+          <a href="/admin/shop">Shop</a>
+          <a href="/admin/forums">Forums</a>
+          <a href="/admin/votes">Points</a>
+          ${isAdminOwner(req) ? `<a href="/admin/servers">Servers</a>` : ""}
           <a href="/admin/logs">Logs</a>
         `
         : `
@@ -662,7 +704,11 @@ registerVoteAdminRoutes(app, {
   esc,
   mysql,
   dbConfig,
-  requireGM
+  requireGM,
+  requireOwner,
+  requireAdminCsrf,
+  csrfField,
+  isAdminOwner
 });
 
 
@@ -673,14 +719,38 @@ registerCommunityAdminRoutes(app, {
   esc,
   dbConfig,
   mysql,
-  requireGM
+  requireGM,
+  requireAdminCsrf,
+  csrfField
 });
 
 registerNewsRoutes(app, {
   render,
   requireGM,
   esc,
-  errorCard
+  errorCard,
+  requireAdminCsrf,
+  csrfField,
+  mysql,
+  dbConfig
+});
+
+registerAdminControlRoutes(app, {
+  render,
+  esc,
+  mysql,
+  dbConfig,
+  requireGM,
+  requireOwner,
+  requireAdminCsrf,
+  csrfField,
+  isAdminOwner,
+  realms,
+  authDb,
+  characterDb,
+  worldDb,
+  getUserSecurityLevel,
+  itemIconUrl
 });
 
 

@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Launcher News",
+    "slug": "launcher-news",
+    "sortOrder": 10,
+    "active": true
+  },
+  {
+    "id": 2,
+    "name": "News",
+    "slug": "news",
+    "sortOrder": 20,
+    "active": true
+  },
+  {
+    "id": 3,
+    "name": "Patch Notes",
+    "slug": "patch-notes",
+    "sortOrder": 30,
+    "active": true
+  },
+  {
+    "id": 4,
+    "name": "Events",
+    "slug": "events",
+    "sortOrder": 40,
+    "active": true
+  },
+  {
+    "id": 5,
+    "name": "Maintenance",
+    "slug": "maintenance",
+    "sortOrder": 50,
+    "active": true
+  },
+  {
+    "id": 6,
+    "name": "Community Spotlight",
+    "slug": "community-spotlight",
+    "sortOrder": 60,
+    "active": true
+  },
+  {
+    "id": 7,
+    "name": "Screenshots",
+    "slug": "screenshots",
+    "sortOrder": 70,
+    "active": true
+  },
+  {
+    "id": 8,
+    "name": "Guides",
+    "slug": "guides",
+    "sortOrder": 80,
+    "active": true
+  }
+]

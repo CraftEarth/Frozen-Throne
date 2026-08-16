@@ -1,13 +1,21 @@
 module.exports = function registerCommunityAdminRoutes(app, tools) {
-  const { render, esc, dbConfig, mysql, requireGM } = tools;
+  const { render, esc, dbConfig, mysql, requireGM, requireAdminCsrf, csrfField } = tools;
+
+  const pool = mysql.createPool({
+    ...dbConfig,
+    database: "frozenthrone",
+    waitForConnections: true,
+    connectionLimit: 10
+  });
 
   async function ftDb() {
-    return mysql.createPool({
-      ...dbConfig,
-      database: "frozenthrone",
-      waitForConnections: true,
-      connectionLimit: 10
-    });
+    return pool;
+  }
+
+  async function audit(req, action, targetType, targetKey, details = {}) {
+    try {
+      await pool.execute(`INSERT INTO admin_audit_events (actor_account_id, actor_username, actor_realm_key, action, target_type, target_key, details_json) VALUES (?, ?, ?, ?, ?, ?, ?)`, [req.user.id, req.user.username, req.user.realmKey, action, targetType, String(targetKey), JSON.stringify(details)]);
+    } catch (err) { console.error("forum admin audit failed", err.message); }
   }
 
   app.get("/admin/forums", requireGM, async (req, res) => {
@@ -42,7 +50,17 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
         </tr>
       `).join("");
 
+      const categoryRows = categories.map(category => `
+        <form class="admin-inline-edit" method="POST" action="/admin/forums/category/${esc(category.id)}">
+          ${csrfField(req)}
+          <input name="name" value="${esc(category.name)}" required>
+          <input name="sort_order" type="number" value="${esc(category.sort_order || 0)}">
+          <input name="description" value="${esc(category.description || "")}" placeholder="Category description">
+          <button class="btn secondary" type="submit">Save</button>
+        </form>`).join("");
+
       render(req, res, "Forum Manager", `
+        <link rel="stylesheet" href="/admin/admin.css">
         <main class="container admin-control cms-compact">
           <section>
             <div class="section-head">
@@ -51,9 +69,27 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
               <p>Create and manage forum boards without touching SQL.</p>
             </div>
 
+            <div class="admin-two-column">
+              <div class="card cms-editor">
+                <h3>Forum Categories</h3>
+                <div class="admin-edit-stack">${categoryRows || `<p>No categories found.</p>`}</div>
+              </div>
+              <div class="card cms-editor">
+                <h3>Create Category</h3>
+                <form method="POST" action="/admin/forums/category/create">
+                  ${csrfField(req)}
+                  <label>Category Name</label><input name="name" required placeholder="Class Discussions">
+                  <label>Description</label><input name="description" placeholder="Boards for every class and specialization.">
+                  <label>Sort Order</label><input name="sort_order" type="number" value="99">
+                  <button class="btn" type="submit">Create Category</button>
+                </form>
+              </div>
+            </div>
+
             <div class="card cms-editor">
               <h3>Create New Forum</h3>
               <form method="POST" action="/admin/forums/board/create">
+                ${csrfField(req)}
                 <label>Forum Name</label>
                 <input name="name" required placeholder="Death Knights">
 
@@ -95,11 +131,11 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
     }
   });
 
-  app.post("/admin/forums/board/create", requireGM, async (req, res) => {
+  app.post("/admin/forums/board/create", requireGM, requireAdminCsrf, async (req, res) => {
     try {
       const conn = await ftDb();
 
-      await conn.execute(`
+      const [result] = await conn.execute(`
         INSERT INTO forum_boards (category_id, realm_id, name, description, sort_order)
         VALUES (?, ?, ?, ?, ?)
       `, [
@@ -109,6 +145,8 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
         String(req.body.description || "").trim(),
         Number(req.body.sort_order || 99)
       ]);
+
+      await audit(req, "forum.board.create", "forum_board", result.insertId, { name: String(req.body.name || "").trim(), categoryId: Number(req.body.category_id || 1) });
 
       res.redirect("/admin/forums");
     } catch (err) {
@@ -145,6 +183,7 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
 
             <div class="card cms-editor">
               <form method="POST" action="/admin/forums/board/${board.id}/edit">
+                ${csrfField(req)}
                 <label>Forum Name</label>
                 <input name="name" required value="${esc(board.name)}">
 
@@ -173,7 +212,7 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
     }
   });
 
-  app.post("/admin/forums/board/:id/edit", requireGM, async (req, res) => {
+  app.post("/admin/forums/board/:id/edit", requireGM, requireAdminCsrf, async (req, res) => {
     try {
       const conn = await ftDb();
 
@@ -190,9 +229,36 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
         Number(req.params.id)
       ]);
 
+      await audit(req, "forum.board.update", "forum_board", Number(req.params.id), { name: String(req.body.name || "").trim(), categoryId: Number(req.body.category_id || 1) });
+
       res.redirect("/admin/forums");
     } catch (err) {
       render(req, res, "Save Forum Error", `<main class="container"><div class="card"><h3>Save Forum Error</h3><p>${esc(err.message)}</p></div></main>`);
+    }
+  });
+
+  app.post("/admin/forums/category/create", requireGM, requireAdminCsrf, async (req, res) => {
+    try {
+      const name = String(req.body.name || "").trim();
+      if (!name) throw new Error("Category name is required.");
+      const [result] = await pool.execute(`INSERT INTO forum_categories (name, description, sort_order) VALUES (?, ?, ?)`, [name, String(req.body.description || "").trim(), Number(req.body.sort_order || 99)]);
+      await audit(req, "forum.category.create", "forum_category", result.insertId, { name });
+      res.redirect("/admin/forums");
+    } catch (err) {
+      render(req, res, "Forum Category Error", `<main class="container"><div class="card"><h3>Forum Category Error</h3><p>${esc(err.message)}</p></div></main>`);
+    }
+  });
+
+  app.post("/admin/forums/category/:id", requireGM, requireAdminCsrf, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const name = String(req.body.name || "").trim();
+      if (!Number.isSafeInteger(id) || id < 1 || !name) throw new Error("Invalid category.");
+      await pool.execute(`UPDATE forum_categories SET name = ?, description = ?, sort_order = ? WHERE id = ?`, [name, String(req.body.description || "").trim(), Number(req.body.sort_order || 0), id]);
+      await audit(req, "forum.category.update", "forum_category", id, { name });
+      res.redirect("/admin/forums");
+    } catch (err) {
+      render(req, res, "Forum Category Error", `<main class="container"><div class="card"><h3>Forum Category Error</h3><p>${esc(err.message)}</p></div></main>`);
     }
   });
 
