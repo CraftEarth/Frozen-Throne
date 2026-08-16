@@ -1,5 +1,6 @@
 const path = require("path");
 const { readPosts } = require("./engine");
+const { SITE_URL, absoluteUrl } = require("../seo/seo");
 
 module.exports = function registerPublicNewsRoutes(app, tools) {
   const { render, esc, errorCard } = tools;
@@ -17,6 +18,12 @@ module.exports = function registerPublicNewsRoutes(app, tools) {
       year: "numeric",
       timeZone: "UTC"
     });
+  };
+
+  const isoDate = value => {
+    if (!value) return undefined;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
   };
 
   const badges = post => `
@@ -45,7 +52,13 @@ module.exports = function registerPublicNewsRoutes(app, tools) {
             <h1>News From Azeroth</h1>
             <div class="card"><h3>No dispatches yet.</h3><p class="muted">Check back soon.</p></div>
           </section>
-        </main>`);
+        </main>`, {
+          seo: {
+            title: "FrozenThrone News, Updates & Guides",
+            description: "Read FrozenThrone realm announcements, development updates, patch notes, launcher releases, events, community guides, and server news.",
+            url: `${SITE_URL}/news`
+          }
+        });
     }
 
     const leadPost = posts.find(post => post.featured) || posts[0];
@@ -131,7 +144,15 @@ module.exports = function registerPublicNewsRoutes(app, tools) {
             <div class="newsroom-list">${archive}</div>
           </section>` : ""}
       </main>
-    `);
+    `, {
+      seo: {
+        title: "FrozenThrone News, Updates & Guides",
+        description: "Read FrozenThrone realm announcements, development updates, patch notes, launcher releases, events, community guides, and server news.",
+        url: `${SITE_URL}/news`,
+        image: imageOf(leadPost),
+        imageAlt: leadPost.title
+      }
+    });
   });
 
   app.get("/news/:slug", (req, res) => {
@@ -142,6 +163,44 @@ module.exports = function registerPublicNewsRoutes(app, tools) {
     if (!post) {
       return render(req, res, "News", errorCard("News post not found."));
     }
+
+    const canonicalUrl = `${SITE_URL}/news/${encodeURIComponent(post.slug || "")}`;
+    const articleImage = absoluteUrl(imageOf(post));
+    const publishedTime = isoDate(post.createdAt);
+    const modifiedTime = isoDate(post.updatedAt || post.createdAt);
+    const articleDescription = post.summary || post.title;
+    const articleSection = typeOf(post);
+    const keywords = String(post.tags || "")
+      .split(",")
+      .map(value => value.trim())
+      .filter(Boolean);
+
+    const newsArticle = {
+      "@type": "NewsArticle",
+      "@id": `${canonicalUrl}#article`,
+      mainEntityOfPage: { "@id": `${canonicalUrl}#webpage` },
+      headline: post.title,
+      description: articleDescription,
+      image: [articleImage],
+      ...(publishedTime ? { datePublished: publishedTime } : {}),
+      ...(modifiedTime ? { dateModified: modifiedTime } : {}),
+      author: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "FrozenThrone Team" },
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      articleSection,
+      ...(keywords.length ? { keywords } : {}),
+      isAccessibleForFree: true,
+      inLanguage: "en-US"
+    };
+
+    const breadcrumbs = {
+      "@type": "BreadcrumbList",
+      "@id": `${canonicalUrl}#breadcrumbs`,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: "News", item: `${SITE_URL}/news` },
+        { "@type": "ListItem", position: 3, name: post.title, item: canonicalUrl }
+      ]
+    };
 
     render(req, res, post.title, `
       <link rel="stylesheet" href="/news/news.css">
@@ -163,9 +222,14 @@ module.exports = function registerPublicNewsRoutes(app, tools) {
       </main>
     `, {
       seo: {
-        description: post.summary || post.title,
-        image: imageOf(post),
-        type: "article"
+        description: articleDescription,
+        url: canonicalUrl,
+        image: articleImage,
+        imageAlt: post.title,
+        type: "article",
+        publishedTime,
+        modifiedTime,
+        structuredData: [newsArticle, breadcrumbs]
       }
     });
   });

@@ -123,5 +123,20 @@
     "allowLikes": true,
     "createdAt": "2026-08-16",
     "updatedAt": "2026-08-16T17:20:04.953Z"
+  },
+  {
+    "id": 8,
+    "title": "How to Earn Vote Tokens",
+    "slug": "how-to-earn-vote-tokens",
+    "type": "Guides",
+    "realmKey": "all",
+    "summary": "Learn the official ways to earn Vote Tokens through TopG voting, meaningful forum participation, and Discord giveaways.",
+    "body": "<section class=\"points-guide\">\r\n  <p>\r\n    <strong>Vote Tokens</strong> are FrozenThrone’s community reward points. They can be spent in our website shop on mounts, companion pets, bags, consumables, potions, food, flasks, and other useful in-game rewards.\r\n  </p>\r\n\r\n  <p>\r\n    There are currently only three legitimate ways to earn Vote Tokens: voting for FrozenThrone, contributing to the forums, and winning an official Discord giveaway.\r\n  </p>\r\n\r\n  <hr>\r\n\r\n  <h2>1. Vote for FrozenThrone on TopG</h2>\r\n\r\n  <p>\r\n    Players can vote for FrozenThrone on TopG once every six hours. Each completed and verified vote rewards your account while also helping new players discover our realms.\r\n  </p>\r\n\r\n  <p>\r\n    Returning every six hours is the fastest and most reliable way to build your Vote Token balance.\r\n  </p>\r\n\r\n  <p>\r\n    <a href=\"/vote\"><strong>Vote for FrozenThrone</strong></a>\r\n  </p>\r\n\r\n  <hr>\r\n\r\n  <h2>2. Participate in the Forums</h2>\r\n\r\n  <p>\r\n    Every three qualifying forum contributions earn one Vote Token automatically.\r\n  </p>\r\n\r\n  <p>Qualifying contributions can include:</p>\r\n\r\n  <ul>\r\n    <li>Creating a useful discussion thread</li>\r\n    <li>Answering another player’s question</li>\r\n    <li>Posting a helpful guide</li>\r\n    <li>Submitting a detailed suggestion</li>\r\n    <li>Reporting a bug with useful information</li>\r\n    <li>Participating in a meaningful community discussion</li>\r\n  </ul>\r\n\r\n  <p>\r\n    Forum rewards are intended to encourage real conversations and helpful community activity. One-word replies, duplicate posts, copied messages, meaningless comments, and other forms of spam will not qualify.\r\n  </p>\r\n\r\n  <p>\r\n    Attempts to abuse the forum reward system may result in deleted posts, lost reward progress, or additional action against the account.\r\n  </p>\r\n\r\n  <p>\r\n    <a href=\"/forums\"><strong>Visit the FrozenThrone Forums</strong></a>\r\n  </p>\r\n\r\n  <hr>\r\n\r\n  <h2>3. Win an Official Discord Giveaway</h2>\r\n\r\n  <p>\r\n    FrozenThrone may occasionally hold giveaways, contests, community events, or other promotions through our official Discord server.\r\n  </p>\r\n\r\n  <p>\r\n    Giveaway prizes may include Vote Tokens, special items, shop rewards, or other account bonuses. Giveaways are not guaranteed and will always be announced through official FrozenThrone channels.\r\n  </p>\r\n\r\n  <hr>\r\n\r\n  <h2>Important Information</h2>\r\n\r\n  <p>\r\n    Vote Token balances are realm-specific. Make sure you have selected the correct realm before voting, participating in the forums, or purchasing rewards from the shop.\r\n  </p>\r\n\r\n  <p>\r\n    Staff will not manually provide free Vote Tokens outside verified corrections, official event rewards, or Discord giveaway prizes. Please do not ask staff members to add points without a legitimate reason.\r\n  </p>\r\n\r\n  <p>\r\n    Support the server, contribute to the community, and enjoy your rewards!\r\n  </p>\r\n\r\n  <p><strong>— The FrozenThrone Team</strong></p>\r\n</section>",
+    "status": "published",
+    "pinned": true,
+    "featured": true,
+    "heroImage": "/images/vote-tokens-guide.png",
+    "createdAt": "2026-08-16",
+    "updatedAt": "2026-08-16T21:37:39.188Z"
   }
 ]

@@ -20,6 +20,7 @@ const mysql = require("mysql2/promise");
 const crypto = require("crypto");
 const path = require("path");
 const { buildMeta } = require("./modules/seo/seo");
+const registerSeoRoutes = require("./modules/seo/routes");
 const registerArmoryRoutes = require("./modules/armory/routes");
 const registerDocsRoutes = require("./modules/docs/routes");
 const registerCommunityRoutes = require("./modules/community/routes");
@@ -39,6 +40,12 @@ const sessions = new Map();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use((req, res, next) => {
+  if (/^\/(admin(?:\/|$)|account(?:\/|$)|login(?:\/|$)|logout(?:\/|$)|api(?:\/|$)|renders(?:\/|$)|dev(?:\/|$)|modelviewer(?:\/|$)|wotlk-items(?:\/|$)|armory-portrait(?:\/|$))/.test(req.path)) {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+  next();
+});
 app.use("/css", express.static(path.join(__dirname, "public/css")));
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 app.use("/renders", express.static(path.join(__dirname, "public/renders")));
@@ -486,12 +493,21 @@ function render(req, res, title, body, options = {}) {
   const flash = options.flash || "";
   const siteUrl = "https://frozenthrone.co";
   const fullTitle = options.seo?.title || `${title} - FrozenThrone`;
+  const privatePage = /^\/(admin(?:\/|$)|account(?:\/|$)|login(?:\/|$)|logout(?:\/|$))/.test(req.path);
+  const robots = options.seo?.robots || (privatePage
+    ? "noindex, nofollow, noarchive"
+    : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
   const seoMeta = buildMeta({
     title: fullTitle,
     description: options.seo?.description,
     url: options.seo?.url || `${siteUrl}${req.originalUrl.split("?")[0]}`,
     image: options.seo?.image,
-    type: options.seo?.type || "website"
+    imageAlt: options.seo?.imageAlt,
+    type: options.seo?.type || "website",
+    robots,
+    publishedTime: options.seo?.publishedTime,
+    modifiedTime: options.seo?.modifiedTime,
+    structuredData: options.seo?.structuredData
   });
 
   res.send(`<!DOCTYPE html>
@@ -634,6 +650,8 @@ app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
 app.get("/rankings", (req, res) => res.redirect("/players.html"));
 
 app.get("/database", (req, res) => res.redirect("/armory/characters"));
+
+registerSeoRoutes(app);
 
 
 registerArmoryRoutes(app, {
