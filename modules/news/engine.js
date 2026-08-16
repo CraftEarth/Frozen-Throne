@@ -5,6 +5,7 @@ const CONTENT_DIR = path.join(__dirname, "../../data/news");
 const POSTS_FILE = path.join(CONTENT_DIR, "posts.json");
 
 const CONTENT_TYPES = [
+  "Launcher News",
   "News",
   "Patch Notes",
   "Events",

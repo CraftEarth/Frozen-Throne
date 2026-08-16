@@ -683,7 +683,7 @@ app.get(["/", "/index.html"], (req, res) => {
       <div class="eyebrow">Selected Realm</div>
       <h1>${esc(realm.name)}</h1>
       <p class="lead">${esc(realmDescription)}</p>
-      <p>Realmlist: <code>set realmlist 51.81.87.159</code></p>
+      <p>Realmlist: <code>set realmlist frozenthrone.co</code></p>
       <a class="btn" href="${req.user ? "/account" : "/register"}">${req.user ? "Account Panel" : "Create Account"}</a>
       <a class="btn secondary" href="/download">Download Client</a>
     </div>
@@ -1300,6 +1300,7 @@ app.get("/admin/bible", requireGM, async (req, res) => {
 
 
 const CMS_CONTENT_TYPES = [
+  "Launcher News",
   "News",
   "Patch Notes",
   "Events",
@@ -1363,7 +1364,10 @@ app.get("/admin/news", requireGM, async (req, res) => {
 
 app.get("/api/launcher/news", (req, res) => {
   const posts = readNewsPosts()
-    .filter(post => post.status === "published")
+    .filter(post =>
+      post.status === "published" &&
+      (post.type === "Launcher News" || post.category === "Launcher News")
+    )
     .sort((a, b) => {
       const pinnedDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
       if (pinnedDiff !== 0) return pinnedDiff;
@@ -1377,7 +1381,8 @@ app.get("/api/launcher/news", (req, res) => {
       type: post.type || post.category || "News",
       summary: post.summary || "",
       date: post.createdAt || "",
-      image: post.image || post.heroImage || ""
+      image: post.image || post.heroImage || "",
+      url: `/news/${encodeURIComponent(post.slug || "")}`
     }));
 
   res.json(posts);
