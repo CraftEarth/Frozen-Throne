@@ -28,6 +28,7 @@ const registerShopRoutes = require("./modules/shop/routes");
 const registerVoteRoutes = require("./modules/votes/routes");
 const registerVoteAdminRoutes = require("./modules/votes/admin-routes");
 const registerCommunityAdminRoutes = require("./modules/community/admin-routes");
+const registerNewsRoutes = require("./modules/news/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -456,10 +457,12 @@ function render(req, res, title, body, options = {}) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/FrozenThrone.ico?v=1" type="image/x-icon">
   <title>${esc(fullTitle)}</title>
   ${seoMeta}
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/frozen-ui.css">
+  <link rel="stylesheet" href="/css/header-logo.css?v=2">
 <script>
 function copyAdminText(text) {
   navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
@@ -470,7 +473,9 @@ function copyAdminText(text) {
 <div class="site-bg">
 <header class="navbar">
   <div class="nav-inner">
-    <a class="logo" href="/">FrozenThrone<small>WotLK 3.3.5a</small></a>
+    <a class="logo site-logo" href="/" aria-label="FrozenThrone home">
+      <img src="/images/logo.png?v=2" alt="FrozenThrone">
+    </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigation menu">
       <span></span><span></span><span></span>
     </button>
@@ -665,6 +670,13 @@ registerCommunityAdminRoutes(app, {
   dbConfig,
   mysql,
   requireGM
+});
+
+registerNewsRoutes(app, {
+  render,
+  requireGM,
+  esc,
+  errorCard
 });
 
 

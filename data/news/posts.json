@@ -17,9 +17,17 @@
     "summary": "Cleanup of database",
     "body": "Started about a week ago and finally released version 2 of website. Stay tuned for updates",
     "status": "published",
-    "category": "Announcements",
-    "image": "/images/frozenthrone-bg.jpeg",
-    "createdAt": "2026-07-06"
+    "type": "Launcher News",
+    "category": "Launcher News",
+    "tags": "",
+    "image": "/images/launchernews.png",
+    "heroImage": "/images/launchernews.png",
+    "featured": false,
+    "pinned": false,
+    "allowComments": true,
+    "allowLikes": true,
+    "createdAt": "2026-07-06",
+    "updatedAt": "2026-08-16T16:59:44.127Z"
   },
   {
     "id": 3,
@@ -31,14 +39,14 @@
     "type": "News",
     "category": "News",
     "tags": "progress",
-    "image": "/images/frozenthrone-bg.jpeg",
-    "heroImage": "/images/frozenthrone-bg.jpeg",
+    "image": "/images/thewalk.png",
+    "heroImage": "/images/thewalk.png",
     "featured": false,
     "pinned": true,
     "allowComments": true,
     "allowLikes": true,
     "createdAt": "2026-07-26",
-    "updatedAt": "2026-07-26T19:05:35.095Z"
+    "updatedAt": "2026-08-16T16:54:57.885Z"
   },
   {
     "id": 4,
@@ -50,14 +58,14 @@
     "type": "Launcher News",
     "category": "Launcher News",
     "tags": "launcher",
-    "image": "/images/frozenthrone-bg.jpeg",
-    "heroImage": "/images/frozenthrone-bg.jpeg",
+    "image": "/images/gathering.png",
+    "heroImage": "/images/gathering.png",
     "featured": false,
     "pinned": false,
     "allowComments": true,
     "allowLikes": true,
     "createdAt": "2026-08-06",
-    "updatedAt": "2026-08-06T20:14:14.176Z"
+    "updatedAt": "2026-08-16T16:53:31.485Z"
   },
   {
     "id": 5,
@@ -69,14 +77,14 @@
     "type": "Launcher News",
     "category": "Launcher News",
     "tags": "Shadowmourne",
-    "image": "/images/frozenthrone-bg.jpeg",
-    "heroImage": "/images/frozenthrone-bg.jpeg",
+    "image": "/images/update.png",
+    "heroImage": "/images/update.png",
     "featured": false,
     "pinned": false,
     "allowComments": true,
     "allowLikes": true,
     "createdAt": "2026-08-07",
-    "updatedAt": "2026-08-07T13:19:53.206Z"
+    "updatedAt": "2026-08-16T16:54:15.823Z"
   },
   {
     "id": 6,
@@ -88,13 +96,32 @@
     "type": "Launcher News",
     "category": "Launcher News",
     "tags": "Shadowmourne",
-    "image": "/images/frozenthrone-bg.jpeg",
-    "heroImage": "/images/frozenthrone-bg.jpeg",
+    "image": "/images/news.png",
+    "heroImage": "/images/news.png",
     "featured": false,
     "pinned": false,
     "allowComments": true,
     "allowLikes": true,
     "createdAt": "2026-08-15",
-    "updatedAt": "2026-08-16T15:53:13.295581Z"
+    "updatedAt": "2026-08-16T16:59:26.345Z"
+  },
+  {
+    "id": 7,
+    "title": "Shadowmourne August Events Are Live",
+    "slug": "event",
+    "summary": "Shadowmourne’s August event schedule is now active, bringing two powerful recurring bonuses to the realm every week!",
+    "body": "<article class=\"news-article\">\r\n  <p>\r\n    August brings two powerful recurring bonuses to Shadowmourne! Whether you are\r\n    leveling a new character, training an alternate hero, improving your professions,\r\n    or preparing for endgame content, these weekly events will help you make faster\r\n    progress across the realm.\r\n  </p>\r\n\r\n  <p>\r\n    Each event follows a consistent weekly schedule, giving everyone time to plan\r\n    their adventures and make the most of the increased rates.\r\n  </p>\r\n\r\n  <h2>3&times; Experience — Friday Through Sunday</h2>\r\n\r\n  <p>\r\n    Every Friday, Saturday, and Sunday, all experience gains on Shadowmourne are\r\n    increased to <strong>3&times; the normal rate</strong>.\r\n  </p>\r\n\r\n  <p>\r\n    The experience bonus remains active throughout the entire weekend—including\r\n    <strong>all day Sunday</strong>. It ends when Sunday is over and Monday begins\r\n    at <strong>00:00 UTC</strong>.\r\n  </p>\r\n\r\n  <p>\r\n    This is the perfect time to begin a new hero, level an alternate character, help\r\n    friends catch up, or continue pushing toward the next major milestone. With three\r\n    full days of increased experience, players can spend less time repeating the same\r\n    leveling routes and more time discovering new zones, completing dungeons, and\r\n    preparing for the challenges waiting at higher levels.\r\n  </p>\r\n\r\n  <ul>\r\n    <li><strong>Friday:</strong> 3&times; experience all day</li>\r\n    <li><strong>Saturday:</strong> 3&times; experience all day</li>\r\n    <li><strong>Sunday:</strong> 3&times; experience all day</li>\r\n    <li><strong>Ends:</strong> Monday at 00:00 UTC</li>\r\n  </ul>\r\n\r\n  <h2>3&times; Skill Gains — Tuesday and Thursday</h2>\r\n\r\n  <p>\r\n    Every Tuesday and Thursday, profession and weapon skill gains are increased to\r\n    <strong>3&times; the normal rate</strong> for the entire day.\r\n  </p>\r\n\r\n  <p>\r\n    These bonus days are an excellent opportunity to catch up on crafting, gathering,\r\n    and weapon training. Whether you are leveling Blacksmithing, Alchemy, Tailoring,\r\n    Mining, Herbalism, or another profession, the increased rate will help you advance\r\n    much faster.\r\n  </p>\r\n\r\n  <p>\r\n    The bonus also applies to weapon skill progression, making Tuesday and Thursday\r\n    ideal days to train a new weapon type or improve skills that may have fallen\r\n    behind while leveling.\r\n  </p>\r\n\r\n  <ul>\r\n    <li><strong>Tuesday:</strong> 3&times; profession and weapon skill gains</li>\r\n    <li><strong>Thursday:</strong> 3&times; profession and weapon skill gains</li>\r\n  </ul>\r\n\r\n  <h2>Plan Your Week on Shadowmourne</h2>\r\n\r\n  <p>\r\n    Use Tuesday and Thursday to strengthen your professions and weapon skills, then\r\n    take advantage of Friday through Sunday to level your characters at triple speed.\r\n    The recurring schedule means there will always be another opportunity to continue\r\n    your progress.\r\n  </p>\r\n\r\n  <p>\r\n    Gather your party, prepare your supplies, and decide which character you want to\r\n    advance next. These bonuses are available to the entire Shadowmourne community,\r\n    so it is also a great time to invite friends, form dungeon groups, and help newer\r\n    players begin their journey.\r\n  </p>\r\n\r\n  <p>\r\n    <strong>Important:</strong> All event times follow UTC. The weekend experience\r\n    event does not end at the beginning of Sunday—it remains active through Sunday\r\n    and ends only when Monday begins.\r\n  </p>\r\n\r\n  <p>\r\n    We hope these weekly events give everyone more ways to enjoy Shadowmourne while\r\n    continuing to build stronger characters and explore everything the realm has to\r\n    offer.\r\n  </p>\r\n\r\n  <p>\r\n    Good luck, heroes, and enjoy the bonuses!\r\n  </p>\r\n\r\n  <p>\r\n    <strong>— The FrozenThrone Team</strong>\r\n  </p>\r\n</article>",
+    "status": "published",
+    "type": "Events",
+    "category": "Events",
+    "tags": "August, events",
+    "image": "/images/events.png",
+    "heroImage": "/images/events.png",
+    "featured": false,
+    "pinned": true,
+    "allowComments": true,
+    "allowLikes": true,
+    "createdAt": "2026-08-16",
+    "updatedAt": "2026-08-16T17:20:04.953Z"
   }
 ]

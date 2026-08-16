@@ -1,0 +1,56 @@
+/* FrozenThrone compact header logo */
+
+.logo.site-logo {
+  grid-area: brand;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 150px !important;
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  height: 74px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  text-shadow: none !important;
+}
+
+.logo.site-logo img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  object-fit: contain !important;
+  transform: scale(1.36) translateY(4px);
+  transform-origin: center;
+  filter:
+    drop-shadow(0 0 6px rgba(78, 183, 255, .55))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, .9));
+}
+
+.logo.site-logo:hover {
+  text-shadow: none !important;
+}
+
+@media (max-width: 860px) {
+  .logo.site-logo {
+    flex-basis: 132px !important;
+    width: 132px !important;
+    min-width: 132px !important;
+    max-width: 132px !important;
+    height: 65px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .logo.site-logo {
+    flex-basis: 118px !important;
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    height: 58px !important;
+  }
+}
