@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: Shadowmourne Support Center
+## Notes: FrozenThrone in-game support center
+## Author: FrozenThrone
+## Version: 1.0.0
+
+ShadowmourneSupport.lua

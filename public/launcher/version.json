@@ -1,6 +1,6 @@
 {
-  "launcherVersion": "0.1.0",
-  "clientVersion": "1.0.0",
+  "launcherVersion": "0.2.1",
+  "clientVersion": "1.0.15",
   "maintenance": false,
-  "message": "FrozenThrone launcher update server is online."
+  "message": "FrozenThrone Launcher 0.2.1 update available."
 }
