@@ -1230,32 +1230,17 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-app.get("/account", requireLogin, async (req, res) => {
-  try {
-    const realm = req.activeRealm;
-    const conn = await characterDb(realm);
-    const [chars] = await conn.execute(
-      `SELECT guid, name, race, class, level, money, online, totalKills FROM characters WHERE account = ? AND (deleteDate IS NULL OR deleteDate = 0) ORDER BY level DESC, name ASC`,
-      [req.user.id]
-    );
-    await conn.end();
-    const characterBlock = `<div class="card highlight"><h3>${esc(realm.name)} Characters</h3>${chars.length ? `<div class="table-wrap"><table class="rank-table"><thead><tr><th>Name</th><th>Race</th><th>Class</th><th>Level</th><th>Gold</th><th>Status</th></tr></thead><tbody>${chars.map(c => `<tr><td><a href="/armory/${esc(realm.key)}/${esc(c.guid)}">${esc(c.name)}</a></td><td>${raceName(c.race)}</td><td>${className(c.class)}</td><td>${c.level}</td><td>${moneyToGold(c.money)}</td><td>${c.online ? "Online" : "Offline"}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No characters on this realm yet.</p>`}</div>`;
-    render(req, res, "Account", `<main class="container"><section>
-      <div class="section-head"><p class="eyebrow">${esc(realm.name)} Account Panel</p><h1>Welcome, ${esc(req.user.username)}</h1><p>This account ID and every character below belong only to ${esc(realm.name)}.</p></div>
-      <div class="grid grid-3">
-        <div class="card stat"><span>Account ID</span><strong>${req.user.id}</strong></div>
-        <div class="card stat"><span>Vote Tokens</span><strong>Soon</strong></div>
-        <div class="card stat"><span>Shop</span><strong>Locked</strong></div>
-      </div>
-      <div class="account-grid">${characterBlock}</div>
-      <div class="card"><h3>Want the Other Realm?</h3><p class="muted">Use the realm selector in the header. Changing realms safely logs this account out before the other realm login.</p></div>
-    </section></main>`);
-  } catch (err) {
-    console.error(err);
-    render(req, res, "Account", errorCard("Account panel failed. Check server logs."));
-  }
+require("./modules/account/routes")(app, {
+  render,
+  errorCard,
+  esc,
+  characterDb,
+  authDb,
+  className,
+  raceName,
+  moneyToGold,
+  requireLogin
 });
-
 
 
 require("./modules/armory/routes")(app, {
