@@ -1,0 +1,21 @@
+[Unit]
+Description=Send FrozenThrone Discord event reminders
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/frozenthrone
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/frozenthrone/discord-events.env
+ExecStart=/usr/bin/node /var/www/frozenthrone/scripts/discord-event-reminder.js
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/www/frozenthrone
+ReadWritePaths=/var/lib/frozenthrone
+RestrictSUIDSGID=true
