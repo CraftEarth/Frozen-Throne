@@ -1,3 +1,4 @@
+const path = require("path");
 const { buildStats } = require("./engine/stats");
 const { getTitleName } = require("../dbc/titles");
 const { getAchievementName, getAchievement } = require("../dbc/achievements");
@@ -23,8 +24,67 @@ module.exports = function registerArmoryRoutes(app, tools) {
     itemQualityName
   } = tools;
 
-  function databaseTabs(active = "characters") {
+  const classOptions = [
+    [1, "Warrior"],
+    [2, "Paladin"],
+    [3, "Hunter"],
+    [4, "Rogue"],
+    [5, "Priest"],
+    [6, "Death Knight"],
+    [7, "Shaman"],
+    [8, "Mage"],
+    [9, "Warlock"],
+    [11, "Druid"]
+  ];
+
+  app.get("/armory/assets/armory.css", (req, res) => {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.sendFile(path.join(__dirname, "armory.css"));
+  });
+
+  function number(value) {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function formatNumber(value) {
+    return number(value).toLocaleString("en-US");
+  }
+
+  function formatDuration(value) {
+    const seconds = number(value);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    if (days) return `${days}d ${hours}h`;
+    return `${hours}h`;
+  }
+
+  function formatLastSeen(value, online = false) {
+    if (online) return "Online now";
+    const timestamp = number(value);
+    if (!timestamp) return "Never recorded";
+    const elapsed = Math.max(0, Math.floor(Date.now() / 1000) - timestamp);
+    if (elapsed < 3600) return `${Math.max(1, Math.floor(elapsed / 60))}m ago`;
+    if (elapsed < 86400) return `${Math.floor(elapsed / 3600)}h ago`;
+    if (elapsed < 2592000) return `${Math.floor(elapsed / 86400)}d ago`;
+    return new Date(timestamp * 1000).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+
+  function classSlug(value) {
+    return String(className(value) || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+
+  function selected(current, expected) {
+    return String(current) === String(expected) ? "selected" : "";
+  }
+
+  function databaseTabs(active = "overview") {
     const tabs = [
+      ["overview", "Armory Home", "/armory"],
       ["characters", "Characters", "/armory/characters"],
       ["items", "Items", "/armory/items"],
       ["npcs", "NPCs", "/armory/npcs"],
@@ -45,7 +105,7 @@ module.exports = function registerArmoryRoutes(app, tools) {
       <main class="ft-shell database-page">
         <section class="ft-frame">
           <div class="ft-db-head">
-            <p class="eyebrow">FrozenThrone Database</p>
+            <p class="eyebrow">FrozenThrone Armory</p>
             <h1>${esc(title)}</h1>
             <p>${esc(description)}</p>
           </div>
@@ -57,22 +117,107 @@ module.exports = function registerArmoryRoutes(app, tools) {
   }
 
 
-app.get("/armory", (req, res, next) => {
-
-  if (req.query.tab === "characters") return res.redirect("/armory/characters");
-
-  return next();
-
-});
-
 app.get(["/armory", "/database"], async (req, res) => {
   if (req.query.tab === "characters") return res.redirect("/armory/characters");
-  return res.redirect("/armory/characters");
+
+  const realm = getActiveRealm(req);
+  let conn;
+
+  try {
+    const exists = await databaseExists(realm);
+    if (!exists) return render(req, res, "Armory Error", errorCard(`${realm.name} is unavailable.`));
+
+    conn = await characterDb(realm);
+    const [summaryRows] = await conn.execute(
+      `SELECT COUNT(*) AS totalCharacters,
+              COALESCE(SUM(CASE WHEN c.online = 1 THEN 1 ELSE 0 END), 0) AS onlineNow,
+              COALESCE(SUM(CASE WHEN c.level >= 80 THEN 1 ELSE 0 END), 0) AS maxLevel,
+              COALESCE(SUM(c.totalKills), 0) AS honorableKills
+       FROM characters c
+       WHERE ${publicCharacterFilter(realm, "c")}`
+    );
+    const [guildRows] = await conn.execute("SELECT COUNT(*) AS guilds FROM guild");
+    await conn.end();
+    conn = null;
+
+    const summary = summaryRows[0] || {};
+    const guilds = guildRows[0]?.guilds || 0;
+    const features = [
+      ["characters", "Characters", "Search every public hero, inspect gear, stats, achievements, talents, and inventory.", "/armory/characters", "♞"],
+      ["items", "Items", "Explore equipment, custom rewards, item levels, stats, vendors, and drop sources.", "/armory/items", "◆"],
+      ["npcs", "NPCs", "Find creatures, trainers, vendors, quest givers, loot tables, and template details.", "/armory/npcs", "♜"],
+      ["quests", "Quests", "Browse objectives, level requirements, rewards, quest chains, and database IDs.", "/armory/quests", "✦"],
+      ["spells", "Spells", "Search spell effects, schools, cast times, power costs, and learned abilities.", "/armory/spells", "✧"],
+      ["mounts", "Mounts", "Discover collectible mounts, riding spells, movement speeds, and requirements.", "/armory/mounts", "♘"],
+      ["titles", "Titles", "Review Alliance and Horde title mappings available throughout the realms.", "/armory/titles", "♛"],
+      ["achievements", "Achievements", "Look up achievements, categories, points, criteria, and completion goals.", "/armory/achievements", "★"]
+    ];
+
+    render(req, res, `Armory | ${realm.name}`, `
+      <main class="container armory-hub-page">
+        <section>
+          <header class="armory-hub-hero">
+            <div>
+              <p class="eyebrow">${esc(realm.name)} Live Database</p>
+              <h1>World Armory</h1>
+              <p class="lead">One gateway to every hero, item, creature, quest, spell, mount, title, and achievement shaping ${esc(realm.name)}.</p>
+              <div class="armory-hero-actions">
+                <a class="armory-primary-action" href="/armory/characters">Find a Character</a>
+                <a href="/players">View Realm Champions</a>
+                <a href="/guilds">Explore Guilds</a>
+              </div>
+            </div>
+            <div class="armory-hub-emblem" aria-hidden="true"><span>FT</span><small>ARMORY</small></div>
+          </header>
+
+          <div class="armory-summary-grid">
+            <div><span>Public Heroes</span><strong>${esc(formatNumber(summary.totalCharacters))}</strong></div>
+            <div><span>Online Now</span><strong class="online">${esc(formatNumber(summary.onlineNow))}</strong></div>
+            <div><span>Level 80+</span><strong>${esc(formatNumber(summary.maxLevel))}</strong></div>
+            <div><span>Honorable Kills</span><strong>${esc(formatNumber(summary.honorableKills))}</strong></div>
+            <div><span>Active Guilds</span><strong>${esc(formatNumber(guilds))}</strong></div>
+          </div>
+
+          <section class="armory-browse-section">
+            <div class="armory-section-heading">
+              <div><p class="eyebrow">Choose a Database</p><h2>Explore ${esc(realm.name)}</h2></div>
+              <p>Live realm data, organized into focused sections and connected directly to character profiles.</p>
+            </div>
+            <div class="armory-feature-grid">
+              ${features.map(([key, label, description, href, icon]) => `
+                <a class="armory-feature-card armory-feature-${key}" href="${href}">
+                  <span class="armory-feature-icon" aria-hidden="true">${icon}</span>
+                  <span><small>Database</small><strong>${label}</strong><p>${description}</p></span>
+                  <b aria-hidden="true">›</b>
+                </a>`).join("")}
+            </div>
+          </section>
+
+          <section class="armory-crossroads">
+            <div><p class="eyebrow">Live Competition</p><h2>Looking for the strongest heroes?</h2><p>Continue into rankings for realm leaders, class champions, PvP standings, wealth, achievements, and activity.</p></div>
+            <a href="/players">Open Player Rankings <span>›</span></a>
+          </section>
+        </section>
+      </main>
+    `, {
+      seo: {
+        title: `FrozenThrone Armory & World Database | ${realm.name}`,
+        description: `Browse ${realm.name} characters, gear, items, NPCs, quests, spells, mounts, titles, and achievements in the FrozenThrone Armory.`,
+        url: "https://frozenthrone.co/armory"
+      }
+    });
+  } catch (err) {
+    try { if (conn) await conn.end(); } catch {}
+    console.error("Armory hub failed", err);
+    render(req, res, "Armory Error", errorCard("The Armory could not load. Check website.log for details."));
+  }
 });
 
 app.get("/armory/characters", async (req, res) => {
   try {
     const search = String(req.query.search || "").trim();
+    const classFilter = String(req.query.class || "").trim();
+    const statusFilter = String(req.query.status || "").trim().toLowerCase();
     const realm = getActiveRealm(req);
     const exists = await databaseExists(realm);
     if (!exists) return render(req, res, "Armory Error", errorCard(`${realm.name} is unavailable.`));
@@ -85,36 +230,62 @@ app.get("/armory/characters", async (req, res) => {
       params.push(`%${search}%`);
     }
 
+    if (classOptions.some(([id]) => String(id) === classFilter)) {
+      where += " AND c.class = ?";
+      params.push(Number(classFilter));
+    }
+
+    if (statusFilter === "online") where += " AND c.online = 1";
+    if (statusFilter === "offline") where += " AND c.online = 0";
+
     const [chars] = await conn.execute(
-      `SELECT c.guid, c.account, c.name, c.race, c.class, c.level, c.money, c.online, c.totalKills
+      `SELECT c.guid, c.name, c.race, c.class, c.level, c.money, c.online, c.totalKills,
+              c.totaltime, c.logout_time, g.guildid, g.name AS guildName
        FROM characters c
+       LEFT JOIN guild_member gm ON gm.guid = c.guid
+       LEFT JOIN guild g ON g.guildid = gm.guildid
        WHERE ${where}
-       ORDER BY c.level DESC, c.name ASC
-       LIMIT 50`,
+       ORDER BY c.online DESC, c.level DESC, c.name ASC
+       LIMIT 100`,
       params
+    );
+
+    const [summaryRows] = await conn.execute(
+      `SELECT COUNT(*) AS totalCharacters,
+              COALESCE(SUM(CASE WHEN c.online = 1 THEN 1 ELSE 0 END), 0) AS onlineNow,
+              COALESCE(SUM(CASE WHEN c.level >= 80 THEN 1 ELSE 0 END), 0) AS maxLevel,
+              COALESCE(SUM(c.totalKills), 0) AS honorableKills
+       FROM characters c
+       WHERE ${publicCharacterFilter(realm, "c")}`
     );
     await conn.end();
 
+    const summary = summaryRows[0] || {};
     const rows = chars.map((ch) => `
-      <tr>
-        <td><a href="/armory/${realm.key}/${ch.guid}">${esc(ch.name)}</a></td>
-        <td>${esc(ch.guid)}</td>
-        <td>${esc(ch.account)}</td>
-        <td>${esc(ch.level)}</td>
-        <td>${esc(raceName(ch.race))}</td>
-        <td>${esc(className(ch.class))}</td>
-        <td>${ch.online ? "Online" : "Offline"}</td>
+      <tr class="armory-character-row">
+        <td>
+          <a class="armory-character-identity" href="/armory/${encodeURIComponent(realm.key)}/${number(ch.guid)}">
+            <span class="armory-character-avatar class-${esc(classSlug(ch.class))}" aria-hidden="true">${esc(String(ch.name || "?").slice(0, 1).toUpperCase())}</span>
+            <span><strong class="class-${esc(classSlug(ch.class))}">${esc(ch.name)}</strong><small>${esc(raceName(ch.race))} ${esc(className(ch.class))}</small></span>
+          </a>
+        </td>
+        <td><strong>${esc(ch.level)}</strong></td>
+        <td><span class="armory-class-pill class-${esc(classSlug(ch.class))}">${esc(className(ch.class))}</span></td>
+        <td>${ch.guildid ? `<a class="armory-guild-link" href="/guilds/${esc(ch.guildid)}">&lt;${esc(ch.guildName)}&gt;</a>` : `<span class="muted">—</span>`}</td>
+        <td>${esc(formatNumber(ch.totalKills))}</td>
+        <td>${esc(moneyToGold(ch.money))}g</td>
+        <td>${esc(formatDuration(ch.totaltime))}</td>
+        <td><span class="armory-status ${ch.online ? "online" : "offline"}">${ch.online ? "● Online" : "○ Offline"}</span><small class="armory-last-seen">${esc(formatLastSeen(ch.logout_time, ch.online))}</small></td>
+        <td><a class="armory-view-profile" href="/armory/${encodeURIComponent(realm.key)}/${number(ch.guid)}">View Profile</a></td>
       </tr>
     `).join("");
 
     const card = `
-      <div class="card">
-        <h3>${esc(realm.name)}</h3>
-        <p class="muted">Showing character GUIDs, account IDs, and links to exact item IDs.</p>
+      <div class="armory-directory-panel">
         <div class="table-wrap">
-          <table class="data-table">
-            <thead><tr><th>Name</th><th>GUID</th><th>Account</th><th>Level</th><th>Race</th><th>Class</th><th>Status</th></tr></thead>
-            <tbody>${rows || `<tr><td colspan="7">No characters found.</td></tr>`}</tbody>
+          <table class="data-table armory-directory-table">
+            <thead><tr><th>Character</th><th>Level</th><th>Class</th><th>Guild</th><th>HKs</th><th>Gold</th><th>Played</th><th>Status</th><th></th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="9" class="armory-empty-directory"><strong>No heroes found.</strong><span>Try a different name, class, or status filter.</span></td></tr>`}</tbody>
           </table>
         </div>
       </div>`;
@@ -124,16 +295,33 @@ app.get("/armory/characters", async (req, res) => {
       "Characters",
       "Browse player profiles, gear, race, class, level, and online status.",
       `
-        <form class="ft-search" method="GET" action="/armory/characters">
-          <div>
-            <label>Search Character Name</label><br>
-            <input name="search" value="${esc(search)}" placeholder="Frozen, Noodle, Zara...">
-          </div>
-          <button class="ft-btn" type="submit">Search</button>
+        <div class="armory-directory-summary">
+          <div><span>Public Heroes</span><strong>${esc(formatNumber(summary.totalCharacters))}</strong></div>
+          <div><span>Online Now</span><strong class="online">${esc(formatNumber(summary.onlineNow))}</strong></div>
+          <div><span>Level 80+</span><strong>${esc(formatNumber(summary.maxLevel))}</strong></div>
+          <div><span>Honorable Kills</span><strong>${esc(formatNumber(summary.honorableKills))}</strong></div>
+        </div>
+
+        <div class="armory-directory-heading">
+          <div><p class="eyebrow">Live Character Directory</p><h2>Find Your Hero</h2></div>
+          <p>${esc(formatNumber(chars.length))} result${chars.length === 1 ? "" : "s"} shown · Maximum 100</p>
+        </div>
+
+        <form class="armory-filter-bar" method="GET" action="/armory/characters">
+          <label class="armory-name-filter"><span>Character Name</span><input type="search" name="search" value="${esc(search)}" placeholder="Search heroes..."></label>
+          <label><span>Class</span><select name="class"><option value="">All Classes</option>${classOptions.map(([id, label]) => `<option value="${id}" ${selected(classFilter, id)}>${label}</option>`).join("")}</select></label>
+          <label><span>Status</span><select name="status"><option value="">Any Status</option><option value="online" ${selected(statusFilter, "online")}>Online</option><option value="offline" ${selected(statusFilter, "offline")}>Offline</option></select></label>
+          <div class="armory-filter-actions"><button type="submit">Search Armory</button><a href="/armory/characters">Reset</a></div>
         </form>
-        <div class="database-results">${card}</div>
+        <div class="database-results armory-directory-results">${card}</div>
       `
-    ));
+    ), {
+      seo: {
+        title: `${realm.name} Character Armory | FrozenThrone`,
+        description: `Search public ${realm.name} characters and inspect their gear, stats, guilds, PvP kills, playtime, and online status.`,
+        url: "https://frozenthrone.co/armory/characters"
+      }
+    });
   } catch (err) {
     console.error(err);
     render(req, res, "Armory Error", errorCard("Armory failed to load. Check website.log for the SQL error."));

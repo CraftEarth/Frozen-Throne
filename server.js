@@ -523,6 +523,7 @@ function render(req, res, title, body, options = {}) {
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/frozen-ui.css">
   <link rel="stylesheet" href="/css/header-logo.css?v=2">
+  ${req.path.startsWith("/armory") || req.path === "/database" ? `<link rel="stylesheet" href="/armory/assets/armory.css?v=1">` : ""}
   ${req.path.startsWith("/guilds") ? `<link rel="stylesheet" href="/guilds/assets/guilds.css?v=1">` : ""}
   ${["/players", "/players.html", "/rankings"].includes(req.path) ? `<link rel="stylesheet" href="/players/assets/players.css?v=1">` : ""}
 <script>
@@ -556,7 +557,7 @@ function copyAdminText(text) {
         : `
           <a href="/">Home</a>
           <a href="/news">News</a>
-          <a href="/armory">Database</a>
+          <a href="/armory">Armory</a>
           <a href="/guilds">Guilds</a>
           <a href="/rankings">Rankings</a>
           <a href="/download">Download</a>
@@ -584,7 +585,7 @@ ${body}
 <footer class="footer">
   <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Active Realm: ${esc(activeRealm.name)}
   <div class="footer-links">
-    <a href="/download">Download</a><a href="/register">Create Account</a><a href="/login">Login</a><a href="/guilds">Guilds</a>
+    <a href="/download">Download</a><a href="/register">Create Account</a><a href="/login">Login</a><a href="/armory">Armory</a><a href="/guilds">Guilds</a>
       <a href="/players">Players</a><a href="/account">Account</a>
   </div>
 </footer>
