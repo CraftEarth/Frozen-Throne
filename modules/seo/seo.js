@@ -11,7 +11,8 @@ const PAGE_DESCRIPTIONS = Object.freeze({
   "/vote": "Vote for FrozenThrone every six hours, support the server, and earn Vote Tokens for mounts, pets, consumables, bags, and other in-game rewards.",
   "/forums": "Join the FrozenThrone community forums for realm announcements, player support, guides, suggestions, bug reports, events, and meaningful discussions.",
   "/armory": "Explore the FrozenThrone live Armory and character database for public characters, guilds, rankings, equipment, achievements, and realm activity.",
-  "/guilds": "Browse FrozenThrone and Shadowmourne guilds, rosters, leaders, membership, and live realm community information."
+  "/guilds": "Browse FrozenThrone and Shadowmourne guilds, rosters, leaders, membership, and live realm community information.",
+  "/players": "Explore FrozenThrone and Shadowmourne player rankings, characters, classes, guilds, achievements, honorable kills, playtime, wealth, and current online activity."
 });
 
 function escMeta(value = "") {

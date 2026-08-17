@@ -9,7 +9,8 @@ const PUBLIC_PAGES = Object.freeze([
   "/vote",
   "/forums",
   "/armory",
-  "/guilds"
+  "/guilds",
+  "/players"
 ]);
 
 function xmlEscape(value = "") {
