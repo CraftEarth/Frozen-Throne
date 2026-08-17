@@ -33,6 +33,7 @@ const registerNewsRoutes = require("./modules/news/routes");
 const registerHomeRoutes = require("./modules/home/routes");
 const registerAdminControlRoutes = require("./modules/admin/routes");
 const registerGuildRoutes = require("./modules/guilds/routes");
+const registerPlayersRoutes = require("./modules/players/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -523,6 +524,7 @@ function render(req, res, title, body, options = {}) {
   <link rel="stylesheet" href="/css/frozen-ui.css">
   <link rel="stylesheet" href="/css/header-logo.css?v=2">
   ${req.path.startsWith("/guilds") ? `<link rel="stylesheet" href="/guilds/assets/guilds.css?v=1">` : ""}
+  ${["/players", "/players.html", "/rankings"].includes(req.path) ? `<link rel="stylesheet" href="/players/assets/players.css?v=1">` : ""}
 <script>
 function copyAdminText(text) {
   navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
@@ -648,9 +650,6 @@ app.get("/realm/switch", (req, res) => {
   res.redirect(safeNext(req.query.next, "/"));
 });
 
-app.get("/players", (req, res) => res.redirect("/armory?tab=characters"));
-app.get("/rankings", (req, res) => res.redirect("/players.html"));
-
 app.get("/database", (req, res) => res.redirect("/armory/characters"));
 
 registerSeoRoutes(app);
@@ -683,6 +682,18 @@ registerGuildRoutes(app, {
   publicCharacterFilter,
   raceName,
   className
+});
+
+registerPlayersRoutes(app, {
+  render,
+  errorCard,
+  esc,
+  getActiveRealm,
+  characterDb,
+  publicCharacterFilter,
+  raceName,
+  className,
+  moneyToGold
 });
 
 registerDocsRoutes(app, {
@@ -4011,62 +4022,6 @@ app.get("/admin/logs", requireGM, async (req, res) => {
   }
 });
 
-app.get(["/players", "/players.html"], async (req, res) => {
-  try {
-    const realm = req.activeRealm;
-    const conn = await characterDb(realm);
-
-    const publicWhere = `
-      FROM characters c
-      WHERE ${publicCharacterFilter(realm, "c")}
-    `;
-
-    const [topLevel] = await conn.execute(`
-      SELECT c.name, c.level, c.class
-      ${publicWhere}
-      ORDER BY c.level DESC, c.xp DESC
-      LIMIT 10
-    `);
-
-    const [topGold] = await conn.execute(`
-      SELECT c.name, c.money
-      ${publicWhere}
-      ORDER BY c.money DESC
-      LIMIT 10
-    `);
-
-    const [topKills] = await conn.execute(`
-      SELECT c.name, c.totalKills
-      ${publicWhere}
-      ORDER BY c.totalKills DESC
-      LIMIT 10
-    `);
-
-    const [onlineNow] = await conn.execute(`
-      SELECT c.name, c.level, c.class
-      ${publicWhere}
-        AND c.online = 1
-      ORDER BY c.level DESC
-    `);
-
-    await conn.end();
-
-    const table = (title, rows, cols) => `<div class="card"><h3>${title}</h3><div class="table-wrap"><table class="rank-table"><tbody>${rows.length ? rows.map((r, i) => `<tr><td>#${i + 1}</td>${cols.map(c => `<td>${c(r)}</td>`).join("")}</tr>`).join("") : `<tr><td class="muted">No data yet.</td></tr>`}</tbody></table></div></div>`;
-    render(req, res, "Players | FrozenThrone Armory", `<main class="container"><section>
-      <div class="section-head"><p class="eyebrow">${esc(realm.name)} Realm</p><h1>Player Rankings</h1><p>Live rankings pulled from ${esc(realm.name)}.</p></div>
-      <div class="grid grid-2">
-        ${table("Top Level", topLevel, [r => esc(r.name), r => `Level ${r.level}`, r => className(r.class)])}
-        ${table("Top Gold", topGold, [r => esc(r.name), r => `${moneyToGold(r.money)}g`])}
-        ${table("Top Kills", topKills, [r => esc(r.name), r => `${r.totalKills || 0} kills`])}
-        ${table("Online Now", onlineNow, [r => esc(r.name), r => `Level ${r.level}`, r => className(r.class)])}
-      </div>
-    </section></main>`);
-  } catch (err) {
-    console.error(err);
-    render(req, res, "Players", errorCard("Player rankings failed. Check server logs."));
-  }
-});
-
 app.get("/stats", async (req, res) => {
   try {
     const realm = req.activeRealm;
@@ -4091,52 +4046,6 @@ app.get("/stats", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "stats failed" });
-  }
-});
-
-app.get("/api/players", async (req, res) => {
-  try {
-    const realm = req.activeRealm;
-    const conn = await characterDb(realm);
-
-    const publicWhere = `
-      FROM characters c
-      WHERE ${publicCharacterFilter(realm, "c")}
-    `;
-
-    const [topLevel] = await conn.execute(`
-      SELECT c.name, c.level, c.class
-      ${publicWhere}
-      ORDER BY c.level DESC, c.xp DESC
-      LIMIT 10
-    `);
-
-    const [topGold] = await conn.execute(`
-      SELECT c.name, c.money
-      ${publicWhere}
-      ORDER BY c.money DESC
-      LIMIT 10
-    `);
-
-    const [topKills] = await conn.execute(`
-      SELECT c.name, c.totalKills
-      ${publicWhere}
-      ORDER BY c.totalKills DESC
-      LIMIT 10
-    `);
-
-    const [onlineNow] = await conn.execute(`
-      SELECT c.name, c.level
-      ${publicWhere}
-        AND c.online = 1
-      ORDER BY c.level DESC
-    `);
-
-    await conn.end();
-    res.json({ realm: realm.name, topLevel, topGold, topKills, onlineNow });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "players failed" });
   }
 });
 
