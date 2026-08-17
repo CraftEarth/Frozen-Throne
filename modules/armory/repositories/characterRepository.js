@@ -14,10 +14,18 @@ async function getCharacterByGuid(charConn, guid) {
 
 async function getCharacterGuild(charConn, guid) {
   const [rows] = await charConn.execute(
-    `SELECT g.guildid AS id, g.name
+    `SELECT
+       g.guildid AS id,
+       g.name,
+       gm.rank AS rankId,
+       COALESCE(gr.rname, CONCAT('Rank ', gm.rank)) AS rank,
+       COUNT(roster.guid) AS members
      FROM guild_member gm
      JOIN guild g ON g.guildid = gm.guildid
+     LEFT JOIN guild_rank gr ON gr.guildid = gm.guildid AND gr.rid = gm.rank
+     LEFT JOIN guild_member roster ON roster.guildid = gm.guildid
      WHERE gm.guid = ?
+     GROUP BY g.guildid, g.name, gm.rank, gr.rname
      LIMIT 1`,
     [guid]
   );

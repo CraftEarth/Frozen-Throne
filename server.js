@@ -32,6 +32,7 @@ const registerCommunityAdminRoutes = require("./modules/community/admin-routes")
 const registerNewsRoutes = require("./modules/news/routes");
 const registerHomeRoutes = require("./modules/home/routes");
 const registerAdminControlRoutes = require("./modules/admin/routes");
+const registerGuildRoutes = require("./modules/guilds/routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -521,6 +522,7 @@ function render(req, res, title, body, options = {}) {
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/frozen-ui.css">
   <link rel="stylesheet" href="/css/header-logo.css?v=2">
+  ${req.path.startsWith("/guilds") ? `<link rel="stylesheet" href="/guilds/assets/guilds.css?v=1">` : ""}
 <script>
 function copyAdminText(text) {
   navigator.clipboard.writeText(text).then(() => alert("Copied: " + text));
@@ -670,6 +672,17 @@ registerArmoryRoutes(app, {
   moneyToGold,
   itemIconUrl,
   itemQualityName
+});
+
+registerGuildRoutes(app, {
+  render,
+  errorCard,
+  esc,
+  getActiveRealm,
+  characterDb,
+  publicCharacterFilter,
+  raceName,
+  className
 });
 
 registerDocsRoutes(app, {
@@ -3997,72 +4010,6 @@ app.get("/admin/logs", requireGM, async (req, res) => {
     render(req, res, "Activity Log Error", errorCard("Activity log failed. Check logs."));
   }
 });
-
-app.get(["/guilds", "/guilds.html"], async (req, res) => {
-  try {
-    const realm = req.activeRealm;
-    const conn = await characterDb(realm);
-
-    const [guilds] = await conn.execute(`
-      SELECT 
-        g.guildid,
-        g.name,
-        g.leaderguid,
-        g.createdate,
-        c.name AS leaderName,
-        COUNT(gm.guid) AS members
-      FROM guild g
-      LEFT JOIN characters c ON c.guid = g.leaderguid
-      LEFT JOIN guild_member gm ON gm.guildid = g.guildid
-      GROUP BY g.guildid, g.name, g.leaderguid, g.createdate, c.name
-      ORDER BY members DESC, g.name ASC
-    `);
-
-    await conn.end();
-
-    const rows = guilds.map(g => `
-      <tr>
-        <td><strong>${esc(g.name)}</strong></td>
-        <td>${esc(g.leaderName || "Unknown")}</td>
-        <td>${esc(g.members)}</td>
-        <td>${esc(g.guildid)}</td>
-      </tr>
-    `).join("");
-
-    render(req, res, "Guilds | FrozenThrone Armory", `
-      <main class="container">
-        <section>
-          <div class="section-head">
-            <p class="eyebrow">${esc(realm.name || realm.realm_key || "Main")} Realm</p>
-            <h1>Guilds</h1>
-            <p>Browse active guilds on ${esc(realm.name)}.</p>
-          </div>
-
-          <div class="card">
-            <h3>Guild Directory</h3>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Guild</th>
-                    <th>Guild Master</th>
-                    <th>Members</th>
-                    <th>Guild ID</th>
-                  </tr>
-                </thead>
-                <tbody>${rows || `<tr><td colspan="4">No guilds found.</td></tr>`}</tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      </main>
-    `);
-  } catch (err) {
-    console.error(err);
-    render(req, res, "Guilds Error", errorCard("Guild page failed. Check website.log or journal logs."));
-  }
-});
-
 
 app.get(["/players", "/players.html"], async (req, res) => {
   try {

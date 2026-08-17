@@ -443,8 +443,16 @@ function renderCharacterV3(view) {
 
       <section class="v3-tab-panel" id="tab-guild">
         <section class="card">
-          <h2>Guild Engine</h2>
-          <p>Guild display panel ready. Next patch will connect guild roster and rank data.</p>
+          <h2>Guild</h2>
+          ${view.guild ? `
+            <p class="eyebrow">${esc(view.realm?.name || "FrozenThrone")} Guild</p>
+            <h3>&lt;${esc(view.guild.name)}&gt;</h3>
+            <div class="v3-summary-grid">
+              <div><span>Rank</span><strong>${esc(view.guild.rank || "Member")}</strong></div>
+              <div><span>Members</span><strong>${esc(view.guild.members || 0)}</strong></div>
+            </div>
+            <p><a class="btn" href="/guilds/${esc(view.guild.id)}">Open Full Guild Profile</a></p>
+          ` : `<p class="muted">This character is not currently in a guild.</p>`}
         </section>
       </section>
 
