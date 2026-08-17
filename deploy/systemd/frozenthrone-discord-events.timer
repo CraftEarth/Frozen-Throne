@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule FrozenThrone Discord event reminders
+
+[Timer]
+OnCalendar=*-*-* 13:00:00 UTC
+Persistent=true
+AccuracySec=1min
+RandomizedDelaySec=0
+Unit=frozenthrone-discord-events.service
+
+[Install]
+WantedBy=timers.target
