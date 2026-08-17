@@ -18,7 +18,7 @@ async function getCharacterGuild(charConn, guid) {
        g.guildid AS id,
        g.name,
        gm.rank AS rankId,
-       COALESCE(gr.rname, CONCAT('Rank ', gm.rank)) AS rank,
+       COALESCE(gr.rname, CONCAT('Rank ', gm.rank)) AS \`rank\`,
        COUNT(roster.guid) AS members
      FROM guild_member gm
      JOIN guild g ON g.guildid = gm.guildid
