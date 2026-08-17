@@ -4,6 +4,10 @@ const POSTS_PER_TOKEN = 3;
 const MIN_REWARD_LENGTH = 50;
 const DAILY_TOKEN_LIMIT = 2;
 const REWARD_COOLDOWN_MINUTES = 2;
+const {
+  sanitizeForumBody,
+  forumPlainText
+} = require("./content");
 
 function pageNumber(value) {
   const parsed = Number.parseInt(value, 10);
@@ -521,7 +525,7 @@ module.exports = function createCommunityEngine(tools) {
       const offset = (page - 1) * POSTS_PER_PAGE;
 
       const [posts] = await connection.execute(`
-        SELECT id, thread_id, author_id, realm_key, body, created_at
+        SELECT id, thread_id, author_id, realm_key, body, created_at, edited_at
         FROM forum_posts
         WHERE thread_id = ?
         ORDER BY created_at ASC, id ASC
@@ -579,7 +583,7 @@ module.exports = function createCommunityEngine(tools) {
     body
   }) {
     const realm = resolveRealm(realmRef);
-    const bodyLength = [...String(body || "").trim()].length;
+    const bodyLength = [...forumPlainText(body)].length;
 
     const [[existing]] = await connection.execute(`
       SELECT post_id, qualified, reward_tokens, reason
@@ -713,10 +717,11 @@ module.exports = function createCommunityEngine(tools) {
 
     try {
       const cleanTitle = String(title || "").trim();
-      const cleanBody = String(body || "").trim();
+      const cleanBody = sanitizeForumBody(body);
+      const bodyText = forumPlainText(cleanBody);
       if (cleanTitle.length < 4) throw new Error("Thread title is too short.");
       if (cleanTitle.length > 200) throw new Error("Thread title is too long.");
-      if (cleanBody.length < 20) throw new Error("Thread message is too short.");
+      if ([...bodyText].length < 20) throw new Error("Thread message is too short.");
 
       const level = await securityLevel(realm, user.id);
       const requestedType = ["normal", "sticky", "announcement", "important", "urgent"].includes(threadType)
@@ -779,8 +784,8 @@ module.exports = function createCommunityEngine(tools) {
     const connection = await forumDb();
 
     try {
-      const cleanBody = String(body || "").trim();
-      if (cleanBody.length < 10) throw new Error("Reply is too short.");
+      const cleanBody = sanitizeForumBody(body);
+      if ([...forumPlainText(cleanBody)].length < 10) throw new Error("Reply is too short.");
 
       await connection.beginTransaction();
       const [[thread]] = await connection.execute(`
@@ -867,6 +872,202 @@ module.exports = function createCommunityEngine(tools) {
     }
   }
 
+  async function postEditor(postId, realmRef, user) {
+    const realm = resolveRealm(realmRef);
+    const connection = await forumDb();
+
+    try {
+      const [[post]] = await connection.execute(`
+        SELECT
+          p.id, p.thread_id, p.author_id, p.realm_key, p.body, p.created_at, p.edited_at,
+          t.title, t.author_id AS thread_author_id, t.board_id, t.locked,
+          b.name AS board_name
+        FROM forum_posts p
+        JOIN forum_threads t ON t.id = p.thread_id
+        JOIN forum_boards b ON b.id = t.board_id
+        WHERE p.id = ? AND b.realm_id IN (0, ?)
+      `, [postId, realm.realm_id]);
+      if (!post) return null;
+
+      const [[firstPost]] = await connection.execute(`
+        SELECT id
+        FROM forum_posts
+        WHERE thread_id = ?
+        ORDER BY created_at, id
+        LIMIT 1
+      `, [post.thread_id]);
+
+      const viewer = await viewerContext(realm, user, connection);
+      const isAuthor = Number(post.author_id) === Number(user?.id)
+        && String(post.realm_key || "main") === String(realm.key);
+      const canModerate = Boolean(viewer?.canModerate);
+      const isOriginal = Number(firstPost?.id) === Number(post.id);
+
+      return {
+        realm,
+        post: {
+          ...post,
+          isOriginal,
+          canEdit: isAuthor || canModerate,
+          canDelete: !isOriginal && (isAuthor || canModerate),
+          canDeleteThread: isOriginal && canModerate
+        },
+        viewer
+      };
+    } finally {
+      await connection.end();
+    }
+  }
+
+  async function editPost({ postId, title, body, realmRef, user }) {
+    const realm = resolveRealm(realmRef);
+    const connection = await forumDb();
+
+    try {
+      const cleanBody = sanitizeForumBody(body);
+      if ([...forumPlainText(cleanBody)].length < 10) throw new Error("Post message is too short.");
+
+      await connection.beginTransaction();
+      const [[post]] = await connection.execute(`
+        SELECT p.id, p.thread_id, p.author_id, p.realm_key, t.title
+        FROM forum_posts p
+        JOIN forum_threads t ON t.id = p.thread_id
+        JOIN forum_boards b ON b.id = t.board_id
+        WHERE p.id = ? AND b.realm_id IN (0, ?)
+        FOR UPDATE
+      `, [postId, realm.realm_id]);
+      if (!post) throw new Error("Forum post not found.");
+
+      const [[firstPost]] = await connection.execute(`
+        SELECT id FROM forum_posts
+        WHERE thread_id = ?
+        ORDER BY created_at, id
+        LIMIT 1
+      `, [post.thread_id]);
+      const isOriginal = Number(firstPost?.id) === Number(post.id);
+      const level = await securityLevel(realm, user?.id);
+      const isAuthor = Number(post.author_id) === Number(user?.id)
+        && String(post.realm_key || "main") === String(realm.key);
+      if (!isAuthor && level < 3) throw new Error("You do not have permission to edit this post.");
+
+      await connection.execute(`
+        UPDATE forum_posts
+        SET body = ?, edited_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [cleanBody, postId]);
+
+      if (isOriginal) {
+        const cleanTitle = String(title || "").trim();
+        if (cleanTitle.length < 4) throw new Error("Thread title is too short.");
+        if (cleanTitle.length > 200) throw new Error("Thread title is too long.");
+        await connection.execute(`UPDATE forum_threads SET title = ? WHERE id = ?`, [cleanTitle, post.thread_id]);
+      }
+
+      const [[position]] = await connection.execute(`
+        SELECT COUNT(*) AS total
+        FROM forum_posts current_post
+        JOIN forum_posts target_post ON target_post.id = ?
+        WHERE current_post.thread_id = target_post.thread_id
+          AND (current_post.created_at < target_post.created_at
+            OR (current_post.created_at = target_post.created_at AND current_post.id <= target_post.id))
+      `, [postId]);
+
+      await connection.commit();
+      return {
+        threadId: Number(post.thread_id),
+        page: Math.max(1, Math.ceil(Number(position.total || 1) / POSTS_PER_PAGE))
+      };
+    } catch (error) {
+      try { await connection.rollback(); } catch {}
+      throw error;
+    } finally {
+      await connection.end();
+    }
+  }
+
+  async function deletePost({ postId, realmRef, user }) {
+    const realm = resolveRealm(realmRef);
+    const connection = await forumDb();
+
+    try {
+      await connection.beginTransaction();
+      const [[post]] = await connection.execute(`
+        SELECT p.id, p.thread_id, p.author_id, p.realm_key
+        FROM forum_posts p
+        JOIN forum_threads t ON t.id = p.thread_id
+        JOIN forum_boards b ON b.id = t.board_id
+        WHERE p.id = ? AND b.realm_id IN (0, ?)
+        FOR UPDATE
+      `, [postId, realm.realm_id]);
+      if (!post) throw new Error("Forum post not found.");
+
+      const [[firstPost]] = await connection.execute(`
+        SELECT id FROM forum_posts
+        WHERE thread_id = ?
+        ORDER BY created_at, id
+        LIMIT 1
+      `, [post.thread_id]);
+      if (Number(firstPost?.id) === Number(post.id)) {
+        throw new Error("The original post cannot be removed by itself. A GM must delete the thread.");
+      }
+
+      const level = await securityLevel(realm, user?.id);
+      const isAuthor = Number(post.author_id) === Number(user?.id)
+        && String(post.realm_key || "main") === String(realm.key);
+      if (!isAuthor && level < 3) throw new Error("You do not have permission to delete this reply.");
+
+      await connection.execute(`DELETE FROM forum_posts WHERE id = ?`, [postId]);
+      const [[stats]] = await connection.execute(`
+        SELECT COUNT(*) AS total, MAX(created_at) AS latest_at
+        FROM forum_posts
+        WHERE thread_id = ?
+      `, [post.thread_id]);
+      await connection.execute(`
+        UPDATE forum_threads
+        SET replies = GREATEST(?, 0), updated_at = COALESCE(?, created_at)
+        WHERE id = ?
+      `, [Number(stats.total || 1) - 1, stats.latest_at, post.thread_id]);
+
+      await connection.commit();
+      return { threadId: Number(post.thread_id) };
+    } catch (error) {
+      try { await connection.rollback(); } catch {}
+      throw error;
+    } finally {
+      await connection.end();
+    }
+  }
+
+  async function deleteThread({ threadId, realmRef, user }) {
+    const realm = resolveRealm(realmRef);
+    const connection = await forumDb();
+
+    try {
+      const level = await securityLevel(realm, user?.id);
+      if (level < 3) throw new Error("GM permission is required to delete a thread.");
+
+      await connection.beginTransaction();
+      const [[thread]] = await connection.execute(`
+        SELECT t.id, t.board_id
+        FROM forum_threads t
+        JOIN forum_boards b ON b.id = t.board_id
+        WHERE t.id = ? AND b.realm_id IN (0, ?)
+        FOR UPDATE
+      `, [threadId, realm.realm_id]);
+      if (!thread) throw new Error("Forum thread not found.");
+
+      await connection.execute(`DELETE FROM forum_posts WHERE thread_id = ?`, [threadId]);
+      await connection.execute(`DELETE FROM forum_threads WHERE id = ?`, [threadId]);
+      await connection.commit();
+      return { boardId: Number(thread.board_id) };
+    } catch (error) {
+      try { await connection.rollback(); } catch {}
+      throw error;
+    } finally {
+      await connection.end();
+    }
+  }
+
   return {
     THREADS_PER_PAGE,
     POSTS_PER_PAGE,
@@ -880,6 +1081,10 @@ module.exports = function createCommunityEngine(tools) {
     securityLevel,
     createThread,
     createReply,
-    moderateThread
+    moderateThread,
+    postEditor,
+    editPost,
+    deletePost,
+    deleteThread
   };
 };
