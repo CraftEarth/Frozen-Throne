@@ -1,12 +1,15 @@
 const path = require("path");
 const createCommunityEngine = require("./engine");
+const { forumPlainText, renderForumBody } = require("./content");
 
 module.exports = function registerCommunityRoutes(app, tools) {
   const {
     render,
     esc,
     requireLogin,
-    requireGM
+    requireGM,
+    requireAdminCsrf,
+    csrfField
   } = tools;
   const engine = tools.communityEngine || createCommunityEngine(tools);
 
@@ -80,7 +83,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
   }
 
   function excerpt(value, maximum = 150) {
-    const text = String(value || "").replace(/\s+/g, " ").trim();
+    const text = forumPlainText(value);
     if (!text) return "Open this discussion to read the latest community updates.";
     return text.length > maximum ? `${text.slice(0, maximum - 1).trim()}…` : text;
   }
@@ -96,10 +99,23 @@ module.exports = function registerCommunityRoutes(app, tools) {
 
   function forumPage(content) {
     return `
-      <link rel="stylesheet" href="/forums/community.css?v=1">
+      <link rel="stylesheet" href="/forums/community.css?v=2">
       <main class="forum-page">
         ${content}
       </main>
+    `;
+  }
+
+  function formattingHelp() {
+    return `
+      <details class="forum-format-help">
+        <summary>Formatting &amp; safe HTML</summary>
+        <div>
+          <p>You can use paragraphs, headings, bold, italics, links, lists, quotes, code blocks, horizontal rules, and tables.</p>
+          <code>&lt;h2&gt;Heading&lt;/h2&gt; &lt;p&gt;Text with &lt;strong&gt;bold&lt;/strong&gt; words.&lt;/p&gt;</code>
+          <p>Scripts, embeds, forms, inline styles, event handlers, and unsafe links are removed automatically.</p>
+        </div>
+      </details>
     `;
   }
 
@@ -315,9 +331,12 @@ module.exports = function registerCommunityRoutes(app, tools) {
     `;
   }
 
-  function postCard(post, thread) {
+  function postCard(post, thread, viewer) {
     const profile = post.author;
     const character = profile.character;
+    const isAuthor = Number(post.author_id) === Number(viewer?.profile?.accountId)
+      && String(post.realm_key || "main") === String(viewer?.profile?.realmKey || "");
+    const canEdit = Boolean(viewer?.canModerate || isAuthor);
     return `
       <article class="forum-post-card class-${esc(character?.classId || 0)}" id="post-${esc(post.id)}">
         <aside class="forum-author-panel">
@@ -334,11 +353,17 @@ module.exports = function registerCommunityRoutes(app, tools) {
         <div class="forum-post-content">
           <header class="forum-post-head">
             <span>${post.number === 1 ? "Original post" : `Reply #${post.number - 1}`}</span>
-            <a href="#post-${esc(post.id)}">${esc(niceDate(post.created_at))} · #${esc(post.number)}</a>
+            <span class="forum-post-meta">
+              ${post.edited_at ? `<em>Edited ${esc(niceDate(post.edited_at))}</em>` : ""}
+              <a href="#post-${esc(post.id)}">${esc(niceDate(post.created_at))} · #${esc(post.number)}</a>
+            </span>
           </header>
-          <div class="forum-post-body">${esc(post.body).replace(/\n/g, "<br>")}</div>
+          <div class="forum-post-body forum-rich-text">${renderForumBody(post.body)}</div>
           <footer class="forum-post-actions">
-            ${Number(thread.locked) ? `<span>🔒 Thread locked</span>` : `<a href="#forum-reply">Reply to discussion</a>`}
+            <span class="forum-post-action-links">
+              ${canEdit ? `<a href="/forums/post/${esc(post.id)}/edit">Edit${post.number === 1 ? " thread" : " reply"}</a>` : ""}
+              ${Number(thread.locked) ? `<span>🔒 Thread locked</span>` : `<a href="#forum-reply">Reply to discussion</a>`}
+            </span>
           </footer>
         </div>
       </article>
@@ -489,6 +514,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
           </header>
           ${rewardPanel(data.viewer)}
           <form class="forum-compose-card" method="POST" action="/forums/board/${esc(data.board.id)}/new">
+            ${csrfField(req)}
             <label for="forum-title">Thread title</label>
             <input id="forum-title" name="title" required minlength="4" maxlength="200" placeholder="Give your discussion a clear title">
 
@@ -505,7 +531,8 @@ module.exports = function registerCommunityRoutes(app, tools) {
 
             <label for="forum-message">Message</label>
             <textarea id="forum-message" name="body" rows="14" required minlength="20" placeholder="Share your thoughts with the community..."></textarea>
-            <p class="forum-field-help">Messages of at least 50 characters advance your Vote Token reward progress.</p>
+            ${formattingHelp()}
+            <p class="forum-field-help">Messages of at least 50 readable characters advance your Vote Token reward progress. HTML tags do not count toward the total.</p>
 
             <div class="forum-form-actions">
               <button class="btn" type="submit">Create Thread</button>
@@ -520,7 +547,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
     }
   });
 
-  app.post("/forums/board/:id/new", requireLogin, async (req, res) => {
+  app.post("/forums/board/:id/new", requireLogin, requireAdminCsrf, async (req, res) => {
     try {
       const result = await engine.createThread({
         boardId: Number(req.params.id),
@@ -546,11 +573,12 @@ module.exports = function registerCommunityRoutes(app, tools) {
       }
 
       const threadType = typeOf(data.thread.thread_type);
-      const posts = data.posts.map(post => postCard(post, data.thread)).join("");
+      const posts = data.posts.map(post => postCard(post, data.thread, data.viewer)).join("");
       const moderation = data.viewer?.canModerate ? `
         <details class="forum-moderation">
           <summary>GM Thread Tools</summary>
           <form method="POST" action="/forums/thread/${esc(data.thread.id)}/moderate">
+            ${csrfField(req)}
             <label>Thread type
               <select name="thread_type">
                 ${Object.entries(typeDetails).map(([value, details]) =>
@@ -584,8 +612,10 @@ module.exports = function registerCommunityRoutes(app, tools) {
               <header><span>Join the Discussion</span><h2>Post a Reply</h2></header>
               ${rewardPanel(data.viewer, true)}
               <form method="POST" action="/forums/thread/${esc(data.thread.id)}/reply">
+                ${csrfField(req)}
                 <label for="forum-reply-body">Reply as ${esc(data.viewer.profile.username)}</label>
                 <textarea id="forum-reply-body" name="body" rows="9" required minlength="10" placeholder="Write your reply..."></textarea>
+                ${formattingHelp()}
                 <div class="forum-reply-footer">
                   <small>50+ characters qualify toward your next Vote Token.</small>
                   <button class="btn" type="submit">Post Reply</button>
@@ -637,7 +667,121 @@ module.exports = function registerCommunityRoutes(app, tools) {
     }
   });
 
-  app.post("/forums/thread/:id/reply", requireLogin, async (req, res) => {
+  app.get("/forums/post/:id/edit", requireLogin, async (req, res) => {
+    try {
+      const data = await engine.postEditor(Number(req.params.id), req.activeRealm, req.user);
+      if (!data) {
+        res.status(404);
+        return render(req, res, "Post Not Found", errorPage("Post not found", "This forum post is unavailable for the selected realm."));
+      }
+      if (!data.post.canEdit) {
+        res.status(403);
+        return render(req, res, "Permission Denied", errorPage("You cannot edit this post", "Only the author or a Game Master can edit it."));
+      }
+
+      const deleteZone = data.post.canDelete ? `
+        <section class="forum-danger-zone">
+          <h2>Delete Reply</h2>
+          <p>This permanently removes the reply. Any Vote Token progress already recorded remains in the anti-farming history.</p>
+          <form method="POST" action="/forums/post/${esc(data.post.id)}/delete">
+            ${csrfField(req)}
+            <label class="forum-confirm-check"><input type="checkbox" required> I understand this reply will be permanently deleted.</label>
+            <button class="btn danger" type="submit">Delete Reply</button>
+          </form>
+        </section>
+      ` : data.post.canDeleteThread ? `
+        <section class="forum-danger-zone">
+          <h2>Delete Entire Thread</h2>
+          <p>This permanently removes the thread and every reply. Reward history is preserved to prevent token farming.</p>
+          <form method="POST" action="/forums/thread/${esc(data.post.thread_id)}/delete">
+            ${csrfField(req)}
+            <label class="forum-confirm-check"><input type="checkbox" required> I understand the entire thread will be permanently deleted.</label>
+            <button class="btn danger" type="submit">Delete Entire Thread</button>
+          </form>
+        </section>
+      ` : "";
+
+      render(req, res, `Edit ${data.post.isOriginal ? "Thread" : "Reply"}`, forumPage(`
+        <section class="container forum-compose-page">
+          ${breadcrumbs([
+            { label: "Forums", href: "/forums" },
+            { label: data.post.board_name, href: `/forums/board/${data.post.board_id}` },
+            { label: data.post.title, href: `/forums/thread/${data.post.thread_id}` },
+            { label: "Edit" }
+          ])}
+          <header class="forum-compose-head">
+            <span class="forum-kicker">Forum Editor</span>
+            <h1>Edit ${data.post.isOriginal ? "Thread" : "Reply"}</h1>
+            <p>Safe HTML is supported and automatically cleaned before it is published.</p>
+          </header>
+          <form class="forum-compose-card" method="POST" action="/forums/post/${esc(data.post.id)}/edit">
+            ${csrfField(req)}
+            ${data.post.isOriginal ? `
+              <label for="forum-title">Thread title</label>
+              <input id="forum-title" name="title" required minlength="4" maxlength="200" value="${esc(data.post.title)}">
+            ` : ""}
+            <label for="forum-message">Message</label>
+            <textarea id="forum-message" name="body" rows="16" required minlength="10">${esc(data.post.body)}</textarea>
+            ${formattingHelp()}
+            <div class="forum-form-actions">
+              <button class="btn" type="submit">Save Changes</button>
+              <a class="btn secondary" href="/forums/thread/${esc(data.post.thread_id)}#post-${esc(data.post.id)}">Cancel</a>
+            </div>
+          </form>
+          ${deleteZone}
+        </section>
+      `));
+    } catch (error) {
+      console.error("forum edit page failed", error);
+      render(req, res, "Forum Error", errorPage("The editor could not load", error.message));
+    }
+  });
+
+  app.post("/forums/post/:id/edit", requireLogin, requireAdminCsrf, async (req, res) => {
+    try {
+      const result = await engine.editPost({
+        postId: Number(req.params.id),
+        title: req.body.title,
+        body: req.body.body,
+        realmRef: req.activeRealm,
+        user: req.user
+      });
+      res.redirect(`/forums/thread/${result.threadId}?page=${result.page}#post-${req.params.id}`);
+    } catch (error) {
+      console.error("forum post edit failed", error);
+      render(req, res, "Forum Error", errorPage("The post was not updated", error.message));
+    }
+  });
+
+  app.post("/forums/post/:id/delete", requireLogin, requireAdminCsrf, async (req, res) => {
+    try {
+      const result = await engine.deletePost({
+        postId: Number(req.params.id),
+        realmRef: req.activeRealm,
+        user: req.user
+      });
+      res.redirect(`/forums/thread/${result.threadId}`);
+    } catch (error) {
+      console.error("forum post delete failed", error);
+      render(req, res, "Forum Error", errorPage("The reply was not deleted", error.message));
+    }
+  });
+
+  app.post("/forums/thread/:id/delete", requireGM, requireAdminCsrf, async (req, res) => {
+    try {
+      const result = await engine.deleteThread({
+        threadId: Number(req.params.id),
+        realmRef: req.activeRealm,
+        user: req.user
+      });
+      res.redirect(`/forums/board/${result.boardId}`);
+    } catch (error) {
+      console.error("forum thread delete failed", error);
+      render(req, res, "Moderation Error", errorPage("The thread was not deleted", error.message));
+    }
+  });
+
+  app.post("/forums/thread/:id/reply", requireLogin, requireAdminCsrf, async (req, res) => {
     try {
       const result = await engine.createReply({
         threadId: Number(req.params.id),
@@ -654,7 +798,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
     }
   });
 
-  app.post("/forums/thread/:id/moderate", requireGM, async (req, res) => {
+  app.post("/forums/thread/:id/moderate", requireGM, requireAdminCsrf, async (req, res) => {
     try {
       await engine.moderateThread({
         threadId: Number(req.params.id),

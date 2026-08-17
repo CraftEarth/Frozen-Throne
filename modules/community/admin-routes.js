@@ -46,21 +46,45 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
           <td>${esc(b.category_name)}</td>
           <td>${esc(b.realm_id || 0)}</td>
           <td>${esc(b.sort_order || 0)}</td>
-          <td><a class="btn secondary" href="/admin/forums/board/${b.id}/edit">Edit</a></td>
+          <td>
+            <div class="admin-row-actions">
+              <a class="btn secondary" href="/admin/forums/board/${b.id}/edit">Edit</a>
+              <form method="POST" action="/admin/forums/board/${b.id}/delete">
+                ${csrfField(req)}
+                <label title="Only empty forums can be deleted"><input type="checkbox" required> Confirm empty</label>
+                <button class="btn danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </td>
         </tr>
       `).join("");
 
       const categoryRows = categories.map(category => `
-        <form class="admin-inline-edit" method="POST" action="/admin/forums/category/${esc(category.id)}">
-          ${csrfField(req)}
-          <input name="name" value="${esc(category.name)}" required>
-          <input name="sort_order" type="number" value="${esc(category.sort_order || 0)}">
-          <input name="description" value="${esc(category.description || "")}" placeholder="Category description">
-          <button class="btn secondary" type="submit">Save</button>
-        </form>`).join("");
+        <div class="admin-category-editor">
+          <form class="admin-inline-edit" method="POST" action="/admin/forums/category/${esc(category.id)}">
+            ${csrfField(req)}
+            <input name="name" value="${esc(category.name)}" required>
+            <input name="sort_order" type="number" value="${esc(category.sort_order || 0)}">
+            <input name="description" value="${esc(category.description || "")}" placeholder="Category description">
+            <button class="btn secondary" type="submit">Save</button>
+          </form>
+          <form method="POST" action="/admin/forums/category/${esc(category.id)}/delete">
+            ${csrfField(req)}
+            <label><input type="checkbox" required> Confirm this category is empty</label>
+            <button class="btn danger" type="submit">Delete Empty Category</button>
+          </form>
+        </div>`).join("");
 
       render(req, res, "Forum Manager", `
         <link rel="stylesheet" href="/admin/admin.css">
+        <style>
+          .admin-row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+          .admin-row-actions form, .admin-category-editor form { margin: 0; }
+          .admin-category-editor { display: grid; gap: 8px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid rgba(120, 200, 240, .14); }
+          .admin-category-editor .admin-inline-edit { display: grid; grid-template-columns: minmax(150px, 1fr) 90px minmax(220px, 2fr) auto; gap: 8px; }
+          .admin-control .btn.danger { border-color: #a74444; background: #6f2028; color: #fff; }
+          @media (max-width: 800px) { .admin-category-editor .admin-inline-edit { grid-template-columns: 1fr; } }
+        </style>
         <main class="container admin-control cms-compact">
           <section>
             <div class="section-head">
@@ -237,6 +261,26 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
     }
   });
 
+  app.post("/admin/forums/board/:id/delete", requireGM, requireAdminCsrf, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isSafeInteger(id) || id < 1) throw new Error("Invalid forum board.");
+
+      const [[board]] = await pool.execute(`SELECT id, name FROM forum_boards WHERE id = ?`, [id]);
+      if (!board) throw new Error("Forum board not found.");
+      const [[threads]] = await pool.execute(`SELECT COUNT(*) AS total FROM forum_threads WHERE board_id = ?`, [id]);
+      if (Number(threads.total || 0) > 0) {
+        throw new Error("This forum still contains threads. Move or delete those threads before deleting the forum.");
+      }
+
+      await pool.execute(`DELETE FROM forum_boards WHERE id = ?`, [id]);
+      await audit(req, "forum.board.delete", "forum_board", id, { name: board.name });
+      res.redirect("/admin/forums");
+    } catch (err) {
+      render(req, res, "Delete Forum Error", `<main class="container"><div class="card"><h3>Forum Was Not Deleted</h3><p>${esc(err.message)}</p><a class="btn secondary" href="/admin/forums">Back to Forum Manager</a></div></main>`);
+    }
+  });
+
   app.post("/admin/forums/category/create", requireGM, requireAdminCsrf, async (req, res) => {
     try {
       const name = String(req.body.name || "").trim();
@@ -259,6 +303,26 @@ module.exports = function registerCommunityAdminRoutes(app, tools) {
       res.redirect("/admin/forums");
     } catch (err) {
       render(req, res, "Forum Category Error", `<main class="container"><div class="card"><h3>Forum Category Error</h3><p>${esc(err.message)}</p></div></main>`);
+    }
+  });
+
+  app.post("/admin/forums/category/:id/delete", requireGM, requireAdminCsrf, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isSafeInteger(id) || id < 1) throw new Error("Invalid forum category.");
+
+      const [[category]] = await pool.execute(`SELECT id, name FROM forum_categories WHERE id = ?`, [id]);
+      if (!category) throw new Error("Forum category not found.");
+      const [[boards]] = await pool.execute(`SELECT COUNT(*) AS total FROM forum_boards WHERE category_id = ?`, [id]);
+      if (Number(boards.total || 0) > 0) {
+        throw new Error("This category still contains forums. Move or delete those forums before deleting the category.");
+      }
+
+      await pool.execute(`DELETE FROM forum_categories WHERE id = ?`, [id]);
+      await audit(req, "forum.category.delete", "forum_category", id, { name: category.name });
+      res.redirect("/admin/forums");
+    } catch (err) {
+      render(req, res, "Delete Forum Category Error", `<main class="container"><div class="card"><h3>Category Was Not Deleted</h3><p>${esc(err.message)}</p><a class="btn secondary" href="/admin/forums">Back to Forum Manager</a></div></main>`);
     }
   });
 

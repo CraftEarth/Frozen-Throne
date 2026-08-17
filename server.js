@@ -312,7 +312,7 @@ function requireAdminCsrf(req, res, next) {
   const supplied = String(req.body?._csrf || "");
   if (!expected || !supplied || expected.length !== supplied.length ||
       !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))) {
-    return res.status(403).send("Invalid or expired admin action token. Reload the page and try again.");
+    return res.status(403).send("Invalid or expired form token. Reload the page and try again.");
   }
   next();
 }
@@ -686,6 +686,8 @@ registerCommunityRoutes(app, {
   mysql,
   requireLogin,
   requireGM,
+  requireAdminCsrf,
+  csrfField,
   getRealm,
   authDb,
   characterDb
