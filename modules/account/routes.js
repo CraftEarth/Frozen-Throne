@@ -200,6 +200,8 @@ module.exports = function registerAccountRoutes(app, deps) {
               <a href="/download">Launcher</a>
               <a href="/forums">Forums</a>
               <a href="/guilds">Guilds</a>
+              <a href="/members">Members</a>
+              <a href="/friends">Friends</a>
               <a href="/logout" class="danger">Log Out</a>
             </nav>
 
