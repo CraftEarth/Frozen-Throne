@@ -176,12 +176,17 @@ module.exports = function registerCommunityRoutes(app, tools) {
   function profileAvatar(profile, large = false) {
     const character = profile?.character;
     const details = classOf(character?.classId);
-    const fallback = String(profile?.username || "?").slice(0, 1).toUpperCase();
+    const fallback = String(profile?.publicHandle || "?").slice(0, 1).toUpperCase();
     return `
       <span class="forum-avatar${large ? " forum-avatar-large" : ""} class-${esc(character?.classId || 0)}" aria-hidden="true">
         ${character ? details.icon : esc(fallback)}
       </span>
     `;
+  }
+
+  function memberProfileHref(profile) {
+    const slug = String(profile?.publicSlug || "").trim();
+    return slug ? `/members/${encodeURIComponent(slug)}` : "";
   }
 
   function characterCard(profile) {
@@ -262,7 +267,11 @@ module.exports = function registerCommunityRoutes(app, tools) {
         <a href="/forums/thread/${esc(board.latest_thread_id)}" class="forum-last-post-link">
           ${esc(board.latest_title)}
         </a>
-        <span>by ${esc(board.latestAuthor?.username || "Unknown")}</span>
+        <span>by ${board.latestAuthor
+          ? memberProfileHref(board.latestAuthor)
+            ? `<a href="${esc(memberProfileHref(board.latestAuthor))}">${esc(board.latestAuthor.publicHandle || "Anonymous Member")}</a>`
+            : esc(board.latestAuthor.publicHandle || "Anonymous Member")
+          : "Anonymous Member"}</span>
         <small>${esc(niceDate(board.latest_updated_at))}</small>
       `
       : `<span class="forum-empty-copy">No discussions yet</span>`;
@@ -295,7 +304,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
           <small>${esc(type.label)}</small>
           <strong>${esc(thread.title)}</strong>
           <span>${esc(excerpt(thread.first_body, 115))}</span>
-          <em>by ${esc(thread.author.username)} · ${esc(niceDate(thread.updated_at))}</em>
+          <em>by ${esc(thread.author.publicHandle || "Anonymous Member")} · ${esc(niceDate(thread.updated_at))}</em>
         </span>
       </a>
     `;
@@ -315,7 +324,9 @@ module.exports = function registerCommunityRoutes(app, tools) {
           </div>
           <a class="forum-thread-title" href="/forums/thread/${esc(thread.id)}">${esc(thread.title)}</a>
           <p>${esc(excerpt(thread.first_body))}</p>
-          <small>Started by <strong>${esc(thread.author.username)}</strong> · ${esc(niceDate(thread.created_at))}</small>
+          <small>Started by ${memberProfileHref(thread.author)
+            ? `<a href="${esc(memberProfileHref(thread.author))}"><strong>${esc(thread.author.publicHandle || "Anonymous Member")}</strong></a>`
+            : `<strong>${esc(thread.author.publicHandle || "Anonymous Member")}</strong>`} · ${esc(niceDate(thread.created_at))}</small>
         </div>
         <div class="forum-thread-stats">
           <span><strong>${esc(count(thread.replies))}</strong><small>Replies</small></span>
@@ -324,7 +335,9 @@ module.exports = function registerCommunityRoutes(app, tools) {
         <div class="forum-thread-last">
           ${thread.lastAuthor ? `
             ${profileAvatar(thread.lastAuthor)}
-            <span><strong>${esc(thread.lastAuthor.username)}</strong><small>${esc(niceDate(thread.last_post_at))}</small></span>
+            <span>${memberProfileHref(thread.lastAuthor)
+              ? `<a href="${esc(memberProfileHref(thread.lastAuthor))}"><strong>${esc(thread.lastAuthor.publicHandle || "Anonymous Member")}</strong></a>`
+              : `<strong>${esc(thread.lastAuthor.publicHandle || "Anonymous Member")}</strong>`}<small>${esc(niceDate(thread.last_post_at))}</small></span>
           ` : `<span class="forum-empty-copy">No activity yet</span>`}
         </div>
       </article>
@@ -341,7 +354,9 @@ module.exports = function registerCommunityRoutes(app, tools) {
       <article class="forum-post-card class-${esc(character?.classId || 0)}" id="post-${esc(post.id)}">
         <aside class="forum-author-panel">
           ${profileAvatar(profile, true)}
-          <a class="forum-author-name" href="${character ? `/armory/${esc(profile.realmKey)}/${esc(character.guid)}` : "#"}">${esc(profile.username)}</a>
+          ${memberProfileHref(profile)
+            ? `<a class="forum-author-name" href="${esc(memberProfileHref(profile))}">${esc(profile.publicHandle || "Anonymous Member")}</a>`
+            : `<span class="forum-author-name">${esc(profile.publicHandle || "Anonymous Member")}</span>`}
           <span class="forum-author-title">${Number(profile.securityLevel) >= 3 ? "FrozenThrone Staff" : Number(profile.securityLevel) >= 1 ? "Community Moderator" : "Adventurer"}</span>
           <div class="forum-badges">${profileBadges(profile)}</div>
           ${characterCard(profile)}
@@ -510,7 +525,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
           <header class="forum-compose-head">
             <span class="forum-kicker">Start a Discussion</span>
             <h1>New Thread</h1>
-            <p>Posting in <strong>${esc(data.board.name)}</strong> as ${esc(data.viewer.profile.username)} on ${esc(data.realm.name)}.</p>
+            <p>Posting in <strong>${esc(data.board.name)}</strong> as ${esc(data.viewer.profile.publicHandle || "Anonymous Member")} on ${esc(data.realm.name)}.</p>
           </header>
           ${rewardPanel(data.viewer)}
           <form class="forum-compose-card" method="POST" action="/forums/board/${esc(data.board.id)}/new">
@@ -613,7 +628,7 @@ module.exports = function registerCommunityRoutes(app, tools) {
               ${rewardPanel(data.viewer, true)}
               <form method="POST" action="/forums/thread/${esc(data.thread.id)}/reply">
                 ${csrfField(req)}
-                <label for="forum-reply-body">Reply as ${esc(data.viewer.profile.username)}</label>
+                <label for="forum-reply-body">Reply as ${esc(data.viewer.profile.publicHandle || "Anonymous Member")}</label>
                 <textarea id="forum-reply-body" name="body" rows="9" required minlength="10" placeholder="Write your reply..."></textarea>
                 ${formattingHelp()}
                 <div class="forum-reply-footer">
@@ -640,7 +655,9 @@ module.exports = function registerCommunityRoutes(app, tools) {
             <div>
               <div class="forum-topic-badges">${threadBadge(data.thread)}${Number(data.thread.locked) ? `<span class="forum-thread-badge locked">Locked</span>` : ""}</div>
               <h1>${esc(data.thread.title)}</h1>
-              <p>Started by <strong>${esc(data.thread.author.username)}</strong> in <a href="/forums/board/${esc(data.thread.board_id)}">${esc(data.thread.board_name)}</a></p>
+              <p>Started by ${memberProfileHref(data.thread.author)
+                ? `<a href="${esc(memberProfileHref(data.thread.author))}"><strong>${esc(data.thread.author.publicHandle || "Anonymous Member")}</strong></a>`
+                : `<strong>${esc(data.thread.author.publicHandle || "Anonymous Member")}</strong>`} in <a href="/forums/board/${esc(data.thread.board_id)}">${esc(data.thread.board_name)}</a></p>
             </div>
             <dl>
               <div><dt>Replies</dt><dd>${esc(count(data.thread.replies))}</dd></div>

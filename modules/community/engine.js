@@ -4,6 +4,7 @@ const POSTS_PER_TOKEN = 3;
 const MIN_REWARD_LENGTH = 50;
 const DAILY_TOKEN_LIMIT = 2;
 const REWARD_COOLDOWN_MINUTES = 2;
+const crypto = require("crypto");
 const {
   sanitizeForumBody,
   forumPlainText
@@ -28,6 +29,23 @@ function placeholders(values) {
 
 function profileKey(realmKey, accountId) {
   return `${realmKey || "main"}:${Number(accountId || 0)}`;
+}
+
+function identityKey(username) {
+  return String(username || "").trim().toUpperCase();
+}
+
+function anonymousHandle(realmKey, accountId) {
+  const secret = process.env.SESSION_SECRET
+    || process.env.APP_SECRET
+    || "frozenthrone-public-member";
+  const digest = crypto
+    .createHmac("sha256", secret)
+    .update(profileKey(realmKey, accountId))
+    .digest("hex")
+    .slice(0, 8)
+    .toUpperCase();
+  return `Member-${digest}`;
 }
 
 module.exports = function createCommunityEngine(tools) {
@@ -87,11 +105,14 @@ module.exports = function createCommunityEngine(tools) {
 
     const profiles = new Map();
     for (const [key, reference] of unique) {
+      const publicHandle = anonymousHandle(reference.realm.key, reference.accountId);
       profiles.set(key, {
         accountId: reference.accountId,
         realmKey: reference.realm.key,
         realmName: reference.realm.name,
-        username: "Unknown",
+        loginUsername: "",
+        publicHandle,
+        publicSlug: "",
         joinDate: null,
         securityLevel: 0,
         postCount: 0,
@@ -136,7 +157,7 @@ module.exports = function createCommunityEngine(tools) {
         for (const account of accounts) {
           const profile = profiles.get(profileKey(realm.key, account.id));
           if (!profile) continue;
-          profile.username = account.username || "Unknown";
+          profile.loginUsername = String(account.username || "").trim();
           profile.joinDate = account.joindate || null;
         }
 
@@ -192,6 +213,36 @@ module.exports = function createCommunityEngine(tools) {
     let ownedConnection = null;
     const forumConnection = connection || (ownedConnection = await forumDb());
     try {
+      const identityUsernames = [...new Set(
+        [...profiles.values()]
+          .map(profile => identityKey(profile.loginUsername))
+          .filter(Boolean)
+      )];
+
+      if (identityUsernames.length) {
+        try {
+          const [identities] = await forumConnection.execute(`
+            SELECT username, public_handle, public_slug
+            FROM member_profiles
+            WHERE UPPER(username) IN (${placeholders(identityUsernames)})
+          `, identityUsernames);
+          const identitiesByLogin = new Map(identities.map(identity => [
+            identityKey(identity.username),
+            identity
+          ]));
+
+          for (const profile of profiles.values()) {
+            const identity = identitiesByLogin.get(identityKey(profile.loginUsername));
+            const handle = String(identity?.public_handle || "").trim();
+            const slug = String(identity?.public_slug || "").trim();
+            if (handle) profile.publicHandle = handle;
+            if (slug) profile.publicSlug = slug;
+          }
+        } catch (error) {
+          console.error("forum public identity lookup failed", error.message);
+        }
+      }
+
       const clauses = [];
       const params = [];
       for (const { realm, ids } of groups.values()) {
@@ -217,6 +268,10 @@ module.exports = function createCommunityEngine(tools) {
       if (ownedConnection) await ownedConnection.end();
     }
 
+    for (const profile of profiles.values()) {
+      delete profile.loginUsername;
+    }
+
     return profiles;
   }
 
@@ -227,7 +282,8 @@ module.exports = function createCommunityEngine(tools) {
       accountId: Number(accountId || 0),
       realmKey,
       realmName: resolveRealm(realmKey)?.name || "FrozenThrone",
-      username: "Unknown",
+      publicHandle: anonymousHandle(realmKey, accountId),
+      publicSlug: "",
       joinDate: null,
       securityLevel: 0,
       postCount: 0,

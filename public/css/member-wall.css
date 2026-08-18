@@ -1,0 +1,348 @@
+/* FrozenThrone persistent member Tavern wall */
+.member-wall {
+  width: calc(100% - 36px);
+  max-width: 1464px;
+  margin: 14px auto 28px;
+  overflow: hidden;
+  border: 1px solid rgba(112, 203, 255, .3);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 10% 0, rgba(39, 151, 215, .16), transparent 35%),
+    linear-gradient(155deg, rgba(5, 28, 47, .97), rgba(2, 13, 24, .99));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .28);
+  color: #dff5ff;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.member-wall-head {
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(112, 203, 255, .22);
+  background: linear-gradient(90deg, rgba(13, 65, 96, .78), rgba(4, 25, 42, .83));
+}
+
+.member-wall-head .eyebrow {
+  margin: 0;
+  color: #dabe6d;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+}
+
+.member-wall-head h2 {
+  margin: 2px 0 0;
+  color: #f0faff;
+  font-size: 18px;
+}
+
+.member-wall-head > div:last-child {
+  text-align: right;
+}
+
+.member-wall-head [data-wall-count] {
+  display: block;
+  color: #779aae;
+  font-size: 9px;
+}
+
+.member-wall-badge {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid rgba(112, 203, 255, .28);
+  border-radius: 999px;
+  color: #83cbed;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.member-wall-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 345px;
+  align-items: stretch;
+}
+
+.member-wall-site .member-wall-grid {
+  grid-template-columns: minmax(0, 1fr) 285px;
+}
+
+.member-wall-list {
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.member-wall-message {
+  position: relative;
+  min-height: 58px;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(112, 203, 255, .11);
+}
+
+.member-wall-message:last-child {
+  border-bottom: 0;
+}
+
+.member-wall-message.pinned {
+  border-left: 3px solid #dabe6d;
+  background: rgba(89, 62, 10, .14);
+}
+
+.member-wall-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.member-wall-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(112, 203, 255, .42);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #42aadd, #092b45);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 0 11px rgba(75, 183, 239, .23);
+}
+
+.member-wall-identity strong,
+.member-wall-identity span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-wall-identity strong {
+  color: #fff;
+  font-size: 10px;
+}
+
+.member-wall-identity span {
+  margin-top: 2px;
+  color: #708fa1;
+  font-size: 8px;
+}
+
+.member-wall-message p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #aecbda;
+  font-size: 10px;
+}
+
+.member-wall-pinned {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  color: #dabe6d;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+.member-wall-empty {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #789aaf;
+  text-align: center;
+}
+
+.member-wall-empty > span {
+  color: #8edaff;
+  font-size: 28px;
+  text-shadow: 0 0 15px rgba(93, 188, 255, .6);
+}
+
+.member-wall-empty strong {
+  margin-top: 3px;
+  color: #dff5ff;
+  font-size: 13px;
+}
+
+.member-wall-empty p {
+  margin: 4px 0 0;
+  font-size: 10px;
+}
+
+.member-wall-empty.failed strong {
+  color: #ffabab;
+}
+
+.member-wall-composer {
+  padding: 12px;
+  border-left: 1px solid rgba(112, 203, 255, .18);
+  background: rgba(1, 12, 22, .5);
+}
+
+.member-wall-composer label {
+  display: block;
+  margin-bottom: 6px;
+  color: #dabe6d;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.member-wall-composer textarea {
+  width: 100%;
+  min-height: 85px;
+  padding: 9px 10px;
+  resize: vertical;
+  border: 1px solid rgba(112, 203, 255, .3);
+  border-radius: 5px;
+  outline: 0;
+  background: rgba(0, 8, 16, .72);
+  color: #eefaff;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.member-wall-composer textarea:focus {
+  border-color: rgba(112, 203, 255, .65);
+  box-shadow: 0 0 12px rgba(69, 177, 236, .15);
+}
+
+.member-wall-composer-row {
+  margin-top: 7px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.member-wall-composer-row small {
+  color: #68889c;
+  font-size: 8px;
+}
+
+.member-wall-composer button,
+.member-wall-login {
+  padding: 7px 11px;
+  border: 1px solid rgba(140, 218, 255, .42);
+  border-radius: 4px;
+  background: linear-gradient(#168ac9, #0b527d);
+  color: #fff !important;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.member-wall-composer button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.member-wall-feedback {
+  min-height: 16px;
+  margin: 6px 0 0;
+  color: #70dca0;
+  font-size: 8px;
+}
+
+.member-wall-feedback.error {
+  color: #ff9f9f;
+}
+
+.member-wall-guest {
+  min-height: 130px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 1px solid rgba(112, 203, 255, .18);
+  background: rgba(1, 12, 22, .5);
+}
+
+.member-wall-guest strong {
+  color: #eaf8ff;
+  font-size: 12px;
+}
+
+.member-wall-guest p {
+  margin: 4px 0 10px;
+  color: #7899ad;
+  font-size: 9px;
+}
+
+.member-wall-login {
+  width: fit-content;
+}
+
+.member-wall-account {
+  margin-top: 0;
+}
+
+.member-wall-site {
+  max-width: 1240px;
+}
+
+.member-wall-site .member-wall-head h2 {
+  font-size: 15px;
+}
+
+@media (max-width: 850px) {
+  .member-wall-grid,
+  .member-wall-site .member-wall-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-wall-composer,
+  .member-wall-guest {
+    border-top: 1px solid rgba(112, 203, 255, .18);
+    border-left: 0;
+  }
+
+  .member-wall-message {
+    grid-template-columns: 155px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .member-wall {
+    width: calc(100% - 28px);
+    margin-top: 10px;
+  }
+
+  .member-wall-head {
+    align-items: flex-start;
+  }
+
+  .member-wall-head h2 {
+    font-size: 16px;
+  }
+
+  .member-wall-message {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 10px 4px;
+  }
+
+  .member-wall-message p {
+    padding-left: 38px;
+  }
+
+  .member-wall-empty {
+    padding: 20px 8px;
+  }
+}

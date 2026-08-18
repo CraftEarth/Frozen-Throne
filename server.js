@@ -34,6 +34,9 @@ const registerHomeRoutes = require("./modules/home/routes");
 const registerAdminControlRoutes = require("./modules/admin/routes");
 const registerGuildRoutes = require("./modules/guilds/routes");
 const registerPlayersRoutes = require("./modules/players/routes");
+const registerMemberWallRoutes = require("./modules/member-wall/routes");
+const registerMemberRoutes = require("./modules/members/routes");
+const registerMemberPrivacyRoutes = require("./modules/members/privacy-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -564,6 +567,7 @@ function copyAdminText(text) {
           <a href="/vote">Vote</a>
           <a href="/shop">Shop</a>
           <a href="/forums">Forums</a>
+          <a href="/members">Members</a>
         `
       }
     </nav>
@@ -582,11 +586,78 @@ function copyAdminText(text) {
 </header>
 ${flash ? `<div class="container"><div class="alert">${esc(flash)}</div></div>` : ""}
 ${body}
+${req.path.startsWith("/admin") ? "" : `
+<link rel="stylesheet" href="/css/member-wall.css?v=1">
+
+<section
+  id="member-wall"
+  class="member-wall ${req.path === "/account" ? "member-wall-account" : "member-wall-site"}"
+  data-member-wall
+  data-wall-mode="${req.path === "/account" ? "account" : "site"}"
+  data-wall-auth="${user ? "1" : "0"}"
+  data-wall-realm="${esc(activeRealm.key)}"
+  data-wall-csrf="${user ? esc(user.csrfToken || "") : ""}"
+>
+  <header class="member-wall-head">
+    <div>
+      <p class="eyebrow">FrozenThrone Community</p>
+      <h2>❄ The Tavern Wall</h2>
+    </div>
+
+    <div>
+      <span class="member-wall-badge">Member Messages</span>
+      <small data-wall-count>Loading messages…</small>
+    </div>
+  </header>
+
+  <div class="member-wall-grid">
+    <div class="member-wall-list" data-wall-list>
+      <div class="member-wall-empty">
+        <span>❄</span>
+        <strong>Waiting on a message…</strong>
+        <p>The Tavern is quiet. A member message will appear here.</p>
+      </div>
+    </div>
+
+    ${user ? `
+      <form class="member-wall-composer" data-wall-form>
+        <label for="member-wall-message">Leave a Tavern message</label>
+
+        <textarea
+          id="member-wall-message"
+          data-wall-message
+          maxlength="300"
+          placeholder="Share an update, welcome another player, or leave a message for the community…"
+          required
+        ></textarea>
+
+        <div class="member-wall-composer-row">
+          <small data-wall-count>0/300</small>
+          <button type="submit" data-wall-submit>Post Message</button>
+        </div>
+
+        <p class="member-wall-feedback" data-wall-feedback></p>
+      </form>
+    ` : `
+      <aside class="member-wall-guest">
+        <strong>Want to leave a message?</strong>
+        <p>Log in with your game account to write on the Tavern wall.</p>
+        <a class="member-wall-login" href="/login?next=${encodeURIComponent(req.originalUrl)}">
+          Member Login
+        </a>
+      </aside>
+    `}
+  </div>
+</section>
+
+<script src="/js/member-wall.js?v=1" defer></script>
+`}
+
 <footer class="footer">
   <strong>FrozenThrone</strong> © 2026 · Wrath of the Lich King 3.3.5a · Active Realm: ${esc(activeRealm.name)}
   <div class="footer-links">
     <a href="/download">Download</a><a href="/register">Create Account</a><a href="/login">Login</a><a href="/armory">Armory</a><a href="/guilds">Guilds</a>
-      <a href="/players">Players</a><a href="/account">Account</a>
+      <a href="/players">Players</a><a href="/members">Members</a><a href="/account">Account</a>
   </div>
 </footer>
 </div>
@@ -1229,6 +1300,40 @@ app.get("/logout", (req, res) => {
   destroySession(req, res);
   res.redirect("/");
 });
+
+registerMemberPrivacyRoutes(app, {
+  render,
+  errorCard,
+  esc,
+  authDb,
+  characterDb,
+  requireLogin,
+  className,
+  raceName,
+  moneyToGold,
+  realms
+});
+
+
+registerMemberRoutes(app, {
+  render,
+  errorCard,
+  esc,
+  authDb,
+  characterDb,
+  requireLogin,
+  className,
+  raceName,
+  moneyToGold,
+  realms
+});
+
+
+registerMemberWallRoutes(app, {
+  authDb,
+  requireLogin
+});
+
 
 require("./modules/account/routes")(app, {
   render,
