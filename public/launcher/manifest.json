@@ -1,43 +1,43 @@
 {
-  "launcherVersion": "0.2.1",
-  "clientVersion": "1.0.15",
-  "maintenance": false,
-  "message": "FrozenThrone Launcher 0.2.1 update available.",
-  "launcherPackage": {
-    "url": "https://frozenthrone.co/launcher/FrozenThroneLauncherUpdate.zip",
-    "size": 212755,
-    "sha256": "434d25045a98ea7d09dbd81c4eb408fe0f36be1891efcef329a88bb0612e85d3"
-  },
-  "files": [
-    {
-      "path": "FrozenThrone/frozenthrone-bg.png",
-      "url": "https://frozenthrone.co/launcher/files/frozenthrone-bg.png",
-      "size": 2981485,
-      "sha256": "14b52916af19dfc366aaa30379aab17eb3492ce50a4e8635ae4360a09502cb38"
+    "launcherVersion": "0.2.1",
+    "clientVersion": "1.0.20",
+    "maintenance": false,
+    "message": "FrozenThrone native cloak appearance update.",
+    "launcherPackage": {
+        "url": "https://frozenthrone.co/launcher/FrozenThroneLauncherUpdate.zip",
+        "size": 212755,
+        "sha256": "434d25045a98ea7d09dbd81c4eb408fe0f36be1891efcef329a88bb0612e85d3"
     },
-    {
-      "path": "Data/patch-FrozenThrone.MPQ",
-      "url": "https://frozenthrone.co/launcher/patches/patch-FrozenThrone.MPQ",
-      "size": 237504,
-      "sha256": "9aabc46c41d76e061caeda019af6a058bc7f9c78f58b52d08d8e705779ba908a"
-    },
-    {
-      "path": "Data/enUS/patch-enUS-4.MPQ",
-      "url": "https://frozenthrone.co/launcher/patches/patch-enUS-4.MPQ",
-      "size": 217,
-      "sha256": "b42a2561790c50fad654fd54f52f43f92f55f622a0b97876794b3651dfc7ab03"
-    },
-    {
-      "path": "Interface/AddOns/ShadowmourneSupport/ShadowmourneSupport.toc",
-      "url": "https://frozenthrone.co/launcher/addons/ShadowmourneSupport/ShadowmourneSupport.toc",
-      "size": 171,
-      "sha256": "12827b69023e07265af16e953444b3ec2d9cbf723b9076bb0cc9159cbf0c44e1"
-    },
-    {
-      "path": "Interface/AddOns/ShadowmourneSupport/ShadowmourneSupport.lua",
-      "url": "https://frozenthrone.co/launcher/addons/ShadowmourneSupport/ShadowmourneSupport.lua",
-      "size": 4299,
-      "sha256": "8824ede4fd9fae5b190def3efdf5889866ded46a5ec78f82cb3dde736665985c"
-    }
-  ]
+    "files": [
+        {
+            "path": "FrozenThrone/frozenthrone-bg.png",
+            "url": "https://frozenthrone.co/launcher/files/frozenthrone-bg.png",
+            "size": 2981485,
+            "sha256": "14b52916af19dfc366aaa30379aab17eb3492ce50a4e8635ae4360a09502cb38"
+        },
+        {
+            "path": "Data/patch-FrozenThrone.MPQ",
+            "url": "https://frozenthrone.co/launcher/patches/patch-FrozenThrone.MPQ",
+            "size": 1733098,
+            "sha256": "5c8670d67707f9080974ba710428bb0f4a0f964765fd8eb3bd0d19cae2ce647b"
+        },
+        {
+            "path": "Data/enUS/patch-enUS-4.MPQ",
+            "url": "https://frozenthrone.co/launcher/patches/patch-enUS-4.MPQ",
+            "size": 1429356,
+            "sha256": "1c991dff100689fb2532a3b9d02951bfb839f60b69ee1d8504edb6ef97c9bae4"
+        },
+        {
+            "path": "Interface/AddOns/ShadowmourneSupport/ShadowmourneSupport.toc",
+            "url": "https://frozenthrone.co/launcher/addons/ShadowmourneSupport/ShadowmourneSupport.toc",
+            "size": 171,
+            "sha256": "12827b69023e07265af16e953444b3ec2d9cbf723b9076bb0cc9159cbf0c44e1"
+        },
+        {
+            "path": "Interface/AddOns/ShadowmourneSupport/ShadowmourneSupport.lua",
+            "url": "https://frozenthrone.co/launcher/addons/ShadowmourneSupport/ShadowmourneSupport.lua",
+            "size": 4299,
+            "sha256": "8824ede4fd9fae5b190def3efdf5889866ded46a5ec78f82cb3dde736665985c"
+        }
+    ]
 }

@@ -1,6 +1,6 @@
 {
-  "launcherVersion": "0.2.1",
-  "clientVersion": "1.0.15",
-  "maintenance": false,
-  "message": "FrozenThrone Launcher 0.2.1 update available."
+    "launcherVersion": "0.2.1",
+    "clientVersion": "1.0.20",
+    "maintenance": false,
+    "message": "FrozenThrone native cloak appearance update."
 }
