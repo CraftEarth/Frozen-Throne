@@ -24,7 +24,7 @@ async function loadNpcModel() {
 
     if (viewer?.setAzimuth) viewer.setAzimuth(0);
     if (viewer?.setZenith) viewer.setZenith(1.5);
-    if (viewer?.setDistance) viewer.setDistance(3.4);
+    if (viewer?.setDistance) viewer.setDistance(5.2);
 
     if (loading) loading.remove();
     container.classList.add("loaded");
