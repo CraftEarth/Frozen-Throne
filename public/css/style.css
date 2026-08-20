@@ -6866,3 +6866,370 @@ main.container > section:first-of-type {
     flex-direction: column;
   }
 }
+
+/* NPC DETAIL REDESIGN START */
+
+/* Reorder the NPC page around player-useful information */
+.database-page .ft-panel:has(#npc-model-viewer) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .item-detail-hero {
+  order: 1;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .npc-model-card {
+  order: 2;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(3) {
+  order: 3;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-2 {
+  order: 4;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+  order: 5;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(4) {
+  order: 6;
+}
+
+/* Compact NPC identity banner */
+.database-page .ft-panel:has(#npc-model-viewer) .item-detail-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  border-left: 4px solid #56c8ff;
+  background:
+    linear-gradient(90deg, rgba(3,35,57,.97), rgba(0,12,23,.92));
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) .item-detail-hero h2 {
+  margin: 0 !important;
+  color: #eefaff;
+  font-size: clamp(24px, 3vw, 38px);
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) .item-detail-hero p {
+  margin: 2px 0 0 !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) .item-detail-hero .ft-btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* Full-body NPC showcase */
+.database-page .npc-model-card {
+  margin: 0 !important;
+  border-color: rgba(96,201,255,.48) !important;
+  box-shadow: 0 0 28px rgba(0,133,210,.15);
+}
+
+.database-page #npc-model-viewer {
+  height: min(76vh, 760px) !important;
+  min-height: 620px;
+  background:
+    radial-gradient(
+      ellipse at 50% 58%,
+      rgba(21,111,166,.28),
+      rgba(0,13,25,.96) 70%
+    ),
+    url("/images/frozen-throne-background.jpg") center/cover !important;
+}
+
+.database-page #npc-model-3d,
+.database-page #npc-model-3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.database-page .npc-model-heading {
+  padding: 12px 18px !important;
+  background: rgba(0,12,23,.94);
+}
+
+.database-page .npc-model-heading h2 {
+  font-size: 24px !important;
+}
+
+.database-page .npc-model-help {
+  padding: 8px 14px !important;
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+/* Turn raw NPC fields into a compact technical strip */
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 .card {
+  min-height: 66px !important;
+  padding: 9px 6px !important;
+  text-align: center;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 span {
+  font-size: 10px !important;
+  letter-spacing: .08em;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 strong {
+  font-size: 18px !important;
+}
+
+/* Tighten the remaining information panels */
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-2 {
+  gap: 10px !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .card,
+.database-page .ft-panel:has(#npc-model-viewer) > .grid > .card {
+  margin: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .database-page .ft-panel:has(#npc-model-viewer) .item-detail-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer)
+  .item-detail-hero .ft-btn {
+    grid-column: 1;
+    grid-row: auto;
+    width: fit-content;
+  }
+
+  .database-page #npc-model-viewer {
+    height: 570px !important;
+    min-height: 570px;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .database-page .npc-model-heading {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+}
+
+/* NPC DETAIL REDESIGN END */
+
+/* NPC PLAYER SHEET START */
+
+.database-page .ft-panel:has(#npc-model-viewer) {
+  display: grid !important;
+  grid-template-columns: minmax(300px, .85fr) minmax(430px, 1.15fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+/* NPC name spans the page */
+.database-page .ft-panel:has(#npc-model-viewer) > .item-detail-hero {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  order: initial !important;
+}
+
+/* Compact statistics on the left */
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  order: initial !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 .card {
+  min-height: 72px !important;
+  padding: 10px !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 strong {
+  font-size: 21px !important;
+}
+
+/* Combat and quests continue below summary */
+.database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-2 {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  order: initial !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+
+/* Paper-doll style model on the right */
+.database-page .ft-panel:has(#npc-model-viewer) > .npc-model-card {
+  grid-column: 2 !important;
+  grid-row: 2 / span 2 !important;
+  order: initial !important;
+  width: 100% !important;
+  max-width: 570px !important;
+  justify-self: center !important;
+  margin: 0 !important;
+}
+
+.database-page #npc-model-viewer {
+  width: 100% !important;
+  height: 590px !important;
+  min-height: 590px !important;
+  max-height: 590px !important;
+}
+
+.database-page #npc-model-3d {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.database-page #npc-model-3d canvas {
+  display: block !important;
+}
+
+/* Vendor and loot use the full page below */
+.database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(3) {
+  grid-column: 1 / -1 !important;
+  grid-row: 4 !important;
+  order: initial !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(4) {
+  grid-column: 1 / -1 !important;
+  grid-row: 5 !important;
+  order: initial !important;
+}
+
+.database-page .ft-panel:has(#npc-model-viewer) > script {
+  display: none !important;
+}
+
+/* Mobile returns to a clean single column */
+@media (max-width: 780px) {
+  .database-page .ft-panel:has(#npc-model-viewer) {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .item-detail-hero {
+    order: 1 !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .npc-model-card {
+    order: 2 !important;
+    max-width: 480px !important;
+    align-self: center !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4 {
+    order: 3 !important;
+    width: 100% !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-2 {
+    order: 4 !important;
+    width: 100% !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(3) {
+    order: 5 !important;
+    width: 100% !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer) > .card:nth-of-type(4) {
+    order: 6 !important;
+    width: 100% !important;
+  }
+
+  .database-page #npc-model-viewer {
+    height: 520px !important;
+    min-height: 520px !important;
+    max-height: 520px !important;
+  }
+}
+
+/* NPC PLAYER SHEET END */
+
+/* NPC PLAYER SHEET GRID CORRECTION */
+@media (min-width: 781px) {
+  .database-page .ft-panel:has(#npc-model-viewer) {
+    grid-template-columns:
+      minmax(0, .82fr)
+      minmax(430px, 1.18fr) !important;
+  }
+
+  /* Keep every left-side panel inside its column */
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-4,
+  .database-page .ft-panel:has(#npc-model-viewer) > .grid.grid-2,
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 > .card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow: hidden !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 .table-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+  }
+
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 td {
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Vendor follows the combat/quest section */
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 + .card {
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
+    width: 100% !important;
+    order: initial !important;
+  }
+
+  /* Loot follows vendor */
+  .database-page .ft-panel:has(#npc-model-viewer)
+    > .grid.grid-2 + .card + .card {
+    grid-column: 1 / -1 !important;
+    grid-row: 5 !important;
+    width: 100% !important;
+    order: initial !important;
+  }
+}
