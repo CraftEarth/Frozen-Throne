@@ -6706,3 +6706,163 @@ main.container > section:first-of-type {
   }
 }
 /* END FrozenThrone consumable shop expansion */
+
+/* FrozenThrone paper doll empty-slot alignment */
+.v3-paper-slot-icon .v3-paper-empty {
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  border-radius: 2px !important;
+  line-height: 1 !important;
+  font-size: 23px !important;
+  text-align: center !important;
+}
+
+.v3-paper-slot-icon {
+  align-items: center !important;
+  justify-items: center !important;
+}
+/* End FrozenThrone paper doll empty-slot alignment */
+
+/* FrozenThrone paper doll tooltip icon spacing */
+.v3-paper-tooltip .v3-item {
+  position: relative !important;
+  min-height: 58px !important;
+  padding: 8px 10px 10px 58px !important;
+  box-sizing: border-box !important;
+}
+
+.v3-paper-tooltip .v3-item-icon {
+  position: absolute !important;
+  left: 10px !important;
+  top: 10px !important;
+  width: 34px !important;
+  height: 34px !important;
+  margin: 0 !important;
+}
+
+.v3-paper-tooltip .v3-item > strong,
+.v3-paper-tooltip .v3-item > small,
+.v3-paper-tooltip .v3-item > .v3-item-stats {
+  position: relative !important;
+  z-index: 1 !important;
+}
+/* End FrozenThrone paper doll tooltip icon spacing */
+
+/* FrozenThrone Paper Doll front-back control */
+.v3-model-view-toggle {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 8px !important;
+  z-index: 25 !important;
+  transform: translateX(-50%) !important;
+  min-width: 88px;
+  padding: 5px 10px !important;
+  border: 1px solid rgba(111, 211, 255, .65) !important;
+  border-radius: 3px !important;
+  background: linear-gradient(#0b527a, #062b44) !important;
+  color: #effaff !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .07em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 1px 2px #000 !important;
+  box-shadow: 0 0 14px rgba(49, 177, 241, .25) !important;
+  cursor: pointer !important;
+}
+
+.v3-model-view-toggle:hover,
+.v3-model-view-toggle:focus {
+  border-color: #a8ebff !important;
+  background: linear-gradient(#1179ad, #064264) !important;
+}
+/* End FrozenThrone Paper Doll front-back control */
+
+
+/* FrozenThrone NPC model viewer */
+.npc-model-card {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.npc-model-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(82, 190, 255, .32);
+}
+
+.npc-model-heading h2,
+.npc-model-heading p {
+  margin: 0;
+}
+
+.npc-model-heading span {
+  color: #9edcff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#npc-model-viewer {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(25, 119, 173, .25), transparent 58%),
+    url("/images/frozen-throne-background.jpg") center/cover;
+}
+
+#npc-model-3d {
+  position: absolute;
+  inset: 0;
+}
+
+#npc-model-3d canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.npc-model-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #b8d8eb;
+  font-weight: 700;
+}
+
+.npc-model-help {
+  margin: 0;
+  padding: 10px 18px;
+  text-align: center;
+  border-top: 1px solid rgba(82, 190, 255, .22);
+}
+
+@media (max-width: 700px) {
+  #npc-model-viewer {
+    height: 420px;
+  }
+
+  .npc-model-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

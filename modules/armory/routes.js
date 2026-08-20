@@ -399,13 +399,13 @@ app.get("/armory/npcs", async (req, res) => {
     if (q) {
       if (/^\d+$/.test(q)) {
         [rows] = await conn.execute(
-          `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
+          `SELECT entry, name, subname, minlevel, maxlevel, npcflag
            FROM creature_template WHERE entry = ? LIMIT 100`,
           [Number(q)]
         );
       } else {
         [rows] = await conn.execute(
-          `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
+          `SELECT entry, name, subname, minlevel, maxlevel, npcflag
            FROM creature_template WHERE name LIKE ? OR subname LIKE ?
            ORDER BY entry ASC LIMIT 100`,
           [`%${q}%`, `%${q}%`]
@@ -413,7 +413,7 @@ app.get("/armory/npcs", async (req, res) => {
       }
     } else {
       [rows] = await conn.execute(
-        `SELECT entry, name, subname, minlevel, maxlevel, npcflag, scale
+        `SELECT entry, name, subname, minlevel, maxlevel, npcflag
          FROM creature_template ORDER BY entry ASC LIMIT 100`
       );
     }
@@ -1113,6 +1113,27 @@ app.get("/armory/npc/:entry", async (req, res) => {
 
     const npc = npcs[0];
 
+    // TrinityCore stores creature displays separately from creature_template.
+    npc.modelid1 = Number(npc.modelid1 || 0);
+    npc.scale = Number(npc.scale || 0);
+
+    if (!npc.modelid1) {
+      try {
+        const [models] = await conn.execute(
+          `SELECT CreatureDisplayID, DisplayScale
+           FROM creature_template_model
+           WHERE CreatureID = ?
+           LIMIT 1`,
+          [entry]
+        );
+
+        npc.modelid1 = Number(models[0]?.CreatureDisplayID || 0);
+        npc.scale = Number(models[0]?.DisplayScale || 1);
+      } catch (modelError) {
+        console.warn("NPC model lookup failed", entry, modelError.message);
+      }
+    }
+
     const [vendorItems] = await conn.execute(
       `SELECT nv.slot, nv.item, nv.maxcount, nv.ExtendedCost,
               it.name, it.Quality, it.ItemLevel, it.displayid
@@ -1193,6 +1214,30 @@ app.get("/armory/npc/:entry", async (req, res) => {
         <p class="muted">${esc(npc.subname || "")} · Entry ${esc(npc.entry)} · Level ${esc(npc.minlevel)}-${esc(npc.maxlevel)}</p>
         <a class="ft-btn secondary" href="/armory/npcs">Back to NPCs</a>
       </div>
+
+      ${npc.modelid1 ? `
+        <div class="card npc-model-card">
+          <div class="npc-model-heading">
+            <div>
+              <p class="eyebrow">Interactive Creature Model</p>
+              <h2>3D Appearance</h2>
+            </div>
+            <span>Display ID ${esc(npc.modelid1)}</span>
+          </div>
+
+          <div id="npc-model-viewer"
+               data-model-id="${esc(npc.modelid1)}"
+               data-model-scale="${esc(npc.scale || 1)}">
+            <div class="npc-model-loading">Loading NPC model...</div>
+            <div id="npc-model-3d"></div>
+          </div>
+
+          <p class="muted npc-model-help">Drag to rotate · Scroll to zoom</p>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="/modelviewer/live/viewer/viewer.min.js"></script>
+        <script type="module" src="/js/npc-model-viewer.js?v=2"></script>
+      ` : ""}
 
       <div class="grid grid-4">
         <div class="card stat"><span>Entry</span><strong>${esc(npc.entry)}</strong></div>
