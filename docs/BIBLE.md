@@ -3,8 +3,8 @@
 ## Current Mission
 Build FrozenThrone OS into a complete server/community operating system for managing TrinityCore WotLK 3.3.5a realms.
 
-Current version: v0.3  
-Current focus: Community Operations + OS Framework  
+Current version: v0.4-dev  
+Current focus: Architecture Checkpoint + Connected World Foundation  
 Current next major feature: Universal Inspector / Relationship Engine
 
 ---
@@ -152,31 +152,60 @@ Current rows:
 
 ## Current Architecture
 
-Current stage: monolith transitioning to modules.
+Current stage: modular FrozenThrone OS platform.
 
-Current code:
-- `server.js` contains most routes.
-- `modules/` folder created for future split.
-- `docs/` folder created for project memory.
-- `scripts/` folder created for helper scripts.
-- `backups/` folder created for safer project backups.
+`server.js` remains the application bootstrap and compatibility layer.
 
-Future target:
-- `server.js` should become core loader.
-- Each app/module should live in its own file.
+Major modules currently include:
+- `account`
+- `admin`
+- `armory`
+- `community`
+- `database`
+- `dbc`
+- `docs`
+- `guilds`
+- `home`
+- `member-wall`
+- `members`
+- `news`
+- `players`
+- `renderer`
+- `seo`
+- `shop`
+- `votes`
 
-Example future layout:
+Current realms:
 
-modules/
-- search.js
-- rewards.js
-- inspector.js
-- npcs.js
-- quests.js
-- realms.js
-- logs.js
-- players.js
-- accounts.js
+FrozenThrone:
+- Realm ID 1
+- TrinityCore
+- `auth`
+- `characters`
+- `world`
+- Port 8085
+
+Solo Beta:
+- Realm ID 2
+- TrinityCore
+- `auth`
+- `characters_beta`
+- `world_beta`
+- Port 8086
+
+Shadowmourne:
+- Realm ID 3
+- AzerothCore / PlayerBots
+- `acore_auth`
+- `acore_characters`
+- `acore_world`
+- Port 8087
+
+Architecture target:
+- Keep `server.js` focused on bootstrap/shared infrastructure.
+- Put feature logic into reusable modules.
+- Make reads and writes realm-aware.
+- Connect major objects through reusable relationship services.
 
 ---
 
@@ -206,52 +235,44 @@ Every admin module should eventually have:
 
 ## Version Roadmap
 
-### v0.3 — Community Operations / OS Framework
-Status: In Progress
+### v0.4 — Connected World / Content Studio Foundation
+Status: Active
 
 Goals:
-- Rewards polish
-- Reward templates
-- Global Search
+- Architecture checkpoint
 - Universal Inspector
 - Relationship Engine
-- Bible/docs
-- Begin module split
-
-### v0.4 — Content Studio
-Planned
-
-Goals:
+- Connected Item / NPC / Quest / Player views
+- Realm-aware services
 - NPC Creator
 - Quest Creator
 - Loot Editor
-- Vendor Creator
+- Vendor Creator / Editor
 - Item Clone/Edit tools
 - GameObject tools
 
 ### v0.5 — Realm Operations
-Planned
+Status: Planned
 
 Goals:
-- Realms page
-- Service status
-- Start/stop/restart worldservers
-- Show ports
-- Realm Creator
-- Clone Beta to new realm
-- Publish Beta changes to Production
+- Realm dashboard
+- Service health/status
+- Safe start/stop/restart controls
+- Port and configuration visibility
+- Backup integration
+- Beta-to-production workflows
 
 ### v0.6 — Community + Automation
-Planned
+Status: Planned
 
 Goals:
 - Event Manager
-- Art contest / Discord event workflow
+- Discord integration
 - Broadcast Center
-- Vote rewards
-- Shop delivery
+- Automated vote rewards
+- Automated shop delivery
 - Reward history/statistics
-- Discord integration later
+- Contest and community workflows
 
 ---
 
@@ -323,7 +344,7 @@ Apps should be enable/disable capable.
 
 At the start of a new session, say:
 
-"Open the Bible. Refresh yourself. Continue v0.3."
+"Open the Bible. Refresh yourself. Continue v0.4-dev."
 
 Then read this file first and continue from Current Mission.
 
@@ -435,11 +456,12 @@ GitHub is the source of truth.
 
 # Core Stack
 
-Game Server
+Game Servers
 - TrinityCore 3.3.5a
+- AzerothCore / PlayerBots
 
 Website
-- Node.js
+- Node.js / Express
 
 Database
 - MySQL
@@ -458,23 +480,39 @@ Version Control
 # Folder Structure
 
 modules/
-    armory/
     account/
+    admin/
+    armory/
+    community/
+    database/
+    dbc/
+    docs/
     guilds/
+    home/
+    member-wall/
+    members/
     news/
-    vote/
+    players/
+    renderer/
+    seo/
     shop/
+    votes/
 
 public/
     css/
     js/
     images/
+    launcher/
+    renders/
     vendor/
 
 docs/
-    CHATGPT_PROJECT_CONTEXT.md
-    ROADMAP.md
+    ARCHITECTURE.md
     BIBLE.md
+    CHANGELOG.md
+    PROJECT.md
+    ROADMAP.md
+    SERVER_STATUS.md
 
 ---
 
@@ -486,21 +524,37 @@ Always:
 
 1. Backup
 2. Edit
-3. Syntax check
-4. Restart
+3. Review the diff
+4. Syntax check when code changes
 5. Test
-6. Commit
-7. Push
+6. Stage exact intended files
+7. Commit
+8. Push
 
 ---
 
 # Git Workflow
 
-git add .
+Never use `git add .` on the live VPS.
+
+Always inspect first:
+
+git status --short
+
+Stage exact files only:
+
+git add path/to/file
+
+Verify staged changes:
+
+git diff --cached --stat
+
+Then:
+
 git commit -m "Describe feature"
 git push
 
-Every completed feature must be committed.
+Every completed feature should be committed without including unrelated live work.
 
 ---
 
@@ -592,6 +646,8 @@ No exceptions.
 
 # Long-Term Goal
 
-Build the best Wrath of the Lich King private server website possible.
+Build FrozenThrone OS into a complete Wrath of the Lich King server and community operating system.
 
-Everything should feel polished, stable, and professionally engineered.
+The website, Armory, databases, realms, players, content tools, administration, rewards, and community systems should operate as one connected platform.
+
+Everything should feel polished, stable, safe, and professionally engineered.
