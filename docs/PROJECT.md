@@ -67,20 +67,20 @@ public/news/
 
 ## Current Databases
 
-Auth:
+FrozenThrone:
 auth
-
-Production World:
+characters
 world
 
-Production Characters:
-characters
-
-Beta World:
+Solo Beta:
+auth
+characters_beta
 world_beta
 
-Beta Characters:
-characters_beta
+Shadowmourne:
+acore_auth
+acore_characters
+acore_world
 
 ----------------------------------------
 
@@ -94,17 +94,23 @@ auth.ft_realm_config
 
 ## Services
 
-Website
+Website:
+frozenthrone-web.service
 
-systemctl restart frozenthrone-web
+FrozenThrone Auth:
+authserver.service
 
-World
+FrozenThrone World:
+worldserver.service
 
-systemctl restart worldserver
+Solo Beta World:
+worldserver-beta.service
 
-Auth
+Shadowmourne Auth:
+frozenthrone-shadow-auth.service
 
-systemctl restart authserver
+Shadowmourne World:
+frozenthrone-shadow-world.service
 
 ----------------------------------------
 
@@ -130,17 +136,19 @@ tree -L 2
 
 ## Current Version
 
-v0.3
+v0.4-dev
 
 Current Mission
+
+Architecture Checkpoint
 
 Universal Inspector
 
 Relationship Engine
 
-Rewards Center
+Connected Object Views
 
-Module Split
+Content Studio
 
 
 ----------------------------------------
