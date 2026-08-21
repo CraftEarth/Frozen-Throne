@@ -1,90 +1,121 @@
-# ❄️ FrozenThrone
+# ❄️ FrozenThrone OS
 
-A custom World of Warcraft: Wrath of the Lich King (3.3.5a) platform built on TrinityCore.
+FrozenThrone is a custom World of Warcraft: Wrath of the Lich King 3.3.5a platform built with TrinityCore, AzerothCore, Node.js, MySQL, and custom web tools.
 
-FrozenThrone is not intended to be another stock TrinityCore website. The goal is to build a modern, database-driven WoW platform with a completely custom Armory, player profiles, guild pages, and game database.
+The goal is bigger than a normal private-server website.
 
----
+FrozenThrone OS is being built as a connected control system for:
 
-# Features
+- Realms
+- Players
+- Accounts
+- Armory
+- Items
+- NPCs
+- Quests
+- Guilds
+- Community
+- Rewards
+- Voting
+- Shop
+- Server administration
 
-- Custom Armory V3
-- Database-first architecture
-- Dynamic Paper Doll equipment renderer
-- Character profile pages
-- Mobile responsive interface
-- SEO engine
-- Modular Node.js architecture
-- Git version control
+## Current Development
 
----
+**v0.4-dev**
 
-# Current Progress
+Current focus:
 
-✔ Custom Armory Renderer
+- Universal Inspector
+- Relationship Engine
+- Realm-aware tools
+- Content Studio foundation
 
-✔ Character Equipment Viewer
+## Current Realms
 
-✔ Dynamic Character Backgrounds
+### FrozenThrone
+- Realm ID: 1
+- Core: TrinityCore 3.3.5a
+- Databases: `auth`, `characters`, `world`
+- World port: 8085
 
-✔ Character Summary Engine
+### Shadowmourne
+- Realm ID: 3
+- Core: AzerothCore / PlayerBots
+- Databases: `acore_auth`, `acore_characters`, `acore_world`
+- World port: 8087
 
-✔ Equipment Engine
+### Solo Beta
+Separate testing realm used for development and balancing.
 
-✔ Modular Rendering System
+## Website
 
-✔ Public GitHub Development
+Project root:
 
----
+`/var/www/frozenthrone`
 
-# Roadmap
+Website service:
 
-- Character Sheet V2
-- Item Database
-- NPC Database
-- Quest Database
-- Guild Pages
-- Player Profiles
-- Achievement Pages
-- Vote Rewards
-- Shop Integration
-- Community Features
+`frozenthrone-web.service`
 
----
+Runtime:
 
-# Technology
+`node server.js`
+
+Internal port:
+
+`3000`
+
+## Major Systems Already Built
+
+- Custom Armory
+- Character profiles
+- Live 3D model viewer
+- Item database
+- NPC database
+- Quest database
+- Player pages
+- Account system
+- Admin Control Center
+- Community system
+- Guild system
+- Vote system
+- Shop
+- Renderer pipeline
+- SEO system
+
+## Development Direction
+
+The long-term workflow is:
+
+`Find → Inspect → Understand Relationships → Edit Safely → Test → Publish → Audit`
+
+The goal is to reduce dependence on raw SQL, DBeaver, SSH, and repetitive GM commands.
+
+## Technology
 
 - Node.js
-- TrinityCore 3.3.5a
+- Express
 - MySQL
-- HTML
-- CSS
+- TrinityCore 3.3.5a
+- AzerothCore
 - JavaScript
+- HTML/CSS
+- systemd
+- Git
+- GitHub
 
----
+## Safety Rules
 
-# Philosophy
-
-FrozenThrone is built one system at a time with an emphasis on:
-
-- Clean code
-- Modular architecture
-- Rollback safety
-- Public development
-- Long-term maintainability
-
----
-
-# Repository
-
-Development is active and frequent.
-
-Expect regular commits as new systems are completed.
-
----
+- Protect working production changes.
+- Back up before risky edits.
+- Never commit secrets.
+- Never stage unrelated files.
+- Test before restarting production services.
+- Keep realm-specific writes explicit.
 
 ## License
 
 This project is for educational and development purposes.
 
-World of Warcraft®, Wrath of the Lich King®, and Blizzard Entertainment® assets remain the property of Blizzard Entertainment.
+World of Warcraft®, Wrath of the Lich King®, Blizzard Entertainment®, and related assets remain the property of their respective owners.
