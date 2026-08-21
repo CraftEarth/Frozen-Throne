@@ -1,412 +1,257 @@
-# FrozenThrone Website Roadmap
-Version: 1.0
-Status: Active Development
+# FrozenThrone OS Roadmap
 
----
+Last updated: 2026-08-21
 
-# Vision
+Development line: **v0.4-dev**
 
-FrozenThrone is NOT just another TrinityCore website.
+## Vision
 
-Goal:
-Build the best Wrath of the Lich King website, armory, database and player portal ever created for a private server.
+FrozenThrone is no longer just a website.
 
-Players should feel like they are using Blizzard's website—but designed specifically for FrozenThrone.
+The goal is to build a connected server operating system for:
 
----
+- Realms
+- Players
+- Accounts
+- Armory
+- Items
+- NPCs
+- Quests
+- Guilds
+- Community
+- Rewards
+- Voting
+- Shop
+- Administration
 
-# Development Rules
+The long-term goal is to reduce routine dependence on:
 
-1. Backup before every edit.
-2. Small patches only.
-3. Test after every patch.
+- DBeaver
+- raw SQL
+- SSH
+- repetitive GM commands
+
+## Development Rules
+
+1. Back up before risky changes.
+2. Make small, reviewable changes.
+3. Test before production restarts.
 4. Run syntax checks before restarting Node.
-5. Every successful feature:
-   - git add .
-   - git commit
-   - git push
-
-Never risk production.
-
----
-
-# Website Navigation
-
-Home
-
-News
-
-Database
-    • Items
-    • NPCs
-    • Quests
-    • Spells
-    • Achievements
-
-Top Players
-
-Vote
-
-Shop
-
-Account
-
-Admin (GM only)
-
----
-
-# Character Sheet V2
-
-Status:
-IN PROGRESS
-
-Layout
-
-Left
-Equipment
-
-Center
-3D Character Viewer
-
-Right
-Character Information
-
-Bottom Tabs
-
-Summary
-
-Stats
-
-Talents
-
-Inventory
-
-Achievements
-
-Professions
-
-Mounts
-
-Pets
-
-Activity
-
-Forums
-
-Everything should fit on ONE clean page.
-
----
-
-# Viewer Engine V2
-
-Status:
-IN PROGRESS
-
-Goals
-
-No stretching
-
-Crystal clear rendering
-
-HD textures
-
-Cached models
-
-Cached item conversions
-
-Fast loading
-
-Mouse rotate
-
-Mouse zoom
-
-Character lighting
-
-Dynamic backgrounds
-
-Race adjustments
-
-Zone adjustments
-
----
-
-# Dynamic Environment Engine
-
-Priority
-
-Zone
-
-Map
-
-Instance
-
-Class
-
-Race
-
-Examples
-
-Icecrown
-
-Stormwind
-
-Dalaran
-
-Orgrimmar
-
-ICC
-
-Naxxramas
-
-Grizzly Hills
-
-Each character should feel alive.
-
----
-
-# Database Engine
-
-Items
-
-NPCs
-
-Quests
-
-Spells
-
-Achievements
-
-Titles
-
-Mounts
-
-Pets
-
-Objects
-
-Game Events
-
-All fully searchable.
-
----
-
-# Achievement Engine
-
-Achievement Icons
-
-Names
-
-Descriptions
-
-Categories
-
-Points
-
-Earned Date
-
-Rewards
-
----
-
-# Talent Engine
-
-Talent Trees
-
-Talent Icons
-
-Ranks
-
-Spell Descriptions
-
-Talent Calculator
-
----
-
-# Profession Engine
-
-Profession Icons
-
-Recipes
-
-Skill Levels
-
-Rare Recipes
-
----
-
-# Mount Engine
-
-Mount Collection
-
-Flying
-
-Ground
-
-Rare
-
-Store Mounts
-
----
-
-# Pet Engine
-
-Companions
-
-Vanity Pets
-
-Collectibles
-
----
-
-# Reputation Engine
-
-All factions
-
-Standing
-
-Rewards
-
----
-
-# Spellbook
-
-Known Spells
-
-Passive
-
-Active
-
-Cooldowns
-
-Descriptions
-
----
-
-# Guild System
-
-Guild Pages
-
-Guild Roster
-
-Guild Progress
-
-Guild News
-
-Guild Achievements
-
-Guild Rankings
-
----
-
-# Player Account
-
-Characters
-
-Forum Posts
-
-Comments
-
-Vote History
-
-Rewards
-
-Shop Purchases
-
-Support Tickets
-
-Friends
-
----
-
-# Community
-
-Forums
-
-Player Profiles
-
-Messaging
-
-Guild Recruitment
-
-Bug Reports
-
-Suggestions
-
----
-
-# Admin Dashboard
-
-Realm Status
-
-Website Status
-
-Player Search
-
-Character Edit
-
-Account Edit
-
-GM Tools
-
-Live Statistics
-
-Announcements
-
-Cache Builder
-
-Backup Manager
-
----
-
-# Long-Term Goals
-
-Interactive World Map
-
-Raid Progress
-
-Arena Rankings
-
-Character Compare
-
-Custom Items
-
-Transmog Viewer
-
-Marketplace
-
-API
-
-Mobile Friendly
-
-Dark/Light Themes
-
----
-
-# Coding Standards
-
-Keep code modular.
-
-Keep files small.
-
-Never duplicate logic.
-
-Always build reusable engines.
-
-Always test before deployment.
-
-GitHub is the source of truth.
-
----
-
-# Mission Statement
-
-FrozenThrone is being built as a premium MMORPG platform.
-
-Quality over speed.
-
-Every feature should feel finished before moving to the next.
-
-Professional.
-Stable.
-Fast.
-Beautiful.
+5. Never use `git add .` on the live VPS.
+6. Stage only the files intended for each commit.
+7. Keep realm-specific writes explicit.
+8. Preserve working production features before refactoring.
+
+## Current Development Priority
+
+The current order is:
+
+1. Architecture checkpoint
+2. Universal Inspector
+3. Relationship Engine
+4. Connected Item / NPC / Quest / Player views
+5. Content Studio
+6. Realm Operations
+7. Automation
+
+## Completed Foundation
+
+### Public Platform
+
+- Home
+- News
+- Registration
+- Login
+- Account system
+- Player pages
+- Character profiles
+- Download / launcher delivery
+- SEO
+
+### Armory
+
+- Custom Armory
+- Equipment viewer
+- Character sheet layout
+- Live 3D character viewer
+- Renderer pipeline
+- Custom item presentation
+- NPC 3D presentation
+
+### Database
+
+- Item lookup
+- NPC lookup
+- Quest lookup
+- Vendor relationships
+- Loot relationships
+- Spawn information
+- Quest starter / ender relationships
+
+### Administration
+
+- Admin Control Center
+- Player inspection
+- Account inspection
+- Global search
+- Reward / mail tooling
+- Activity logging
+- Realm-aware foundations
+
+### Community
+
+- Member profiles
+- Member privacy
+- Member Wall
+- Community module
+- Guild module
+
+### Economy and Engagement
+
+- Vote system
+- Vote administration
+- Shop
+- Reward foundation
+
+## v0.4 — Connected World / Content Studio Foundation
+
+Status: **ACTIVE**
+
+### Phase 1 — Architecture Checkpoint
+
+- [x] Protect current live working tree
+- [x] Create v0.4 development branch
+- [x] Refresh project README
+- [x] Add architecture baseline
+- [x] Refresh roadmap
+- [ ] Establish changelog
+- [ ] Audit current services and realms
+- [ ] Refresh server status documentation
+- [ ] Refresh project reference documentation
+
+### Phase 2 — Universal Inspector
+
+Build one reusable inspection system for:
+
+- [ ] Players
+- [ ] Accounts
+- [ ] Items
+- [ ] NPCs
+- [ ] Quests
+- [ ] Guilds
+- [ ] Realms
+
+Each inspector should eventually show:
+
+- Summary
+- Relationships
+- Actions
+- History
+
+### Phase 3 — Relationship Engine
+
+Connect related game and website data.
+
+Examples:
+
+- Item → Owners
+- Item → Vendors
+- Item → Loot Sources
+- Item → Quests
+- NPC → Spawns
+- NPC → Vendor Inventory
+- NPC → Loot
+- NPC → Quests
+- Player → Account
+- Player → Guild
+- Player → Equipment
+- Player → Rewards
+
+### Phase 4 — Content Studio
+
+Build safe creation and editing tools for game content.
+
+Planned tools:
+
+- [ ] NPC Creator
+- [ ] NPC Clone / Edit
+- [ ] Vendor Creator
+- [ ] Vendor Editor
+- [ ] Loot Editor
+- [ ] Quest Creator
+- [ ] Quest Editor
+- [ ] Item Clone / Edit
+- [ ] GameObject tools
+
+Requirements:
+
+- Realm-aware
+- Logged
+- Validated before writes
+- Clear Production vs Beta indicators
+- Reusable UI
+- Reusable data services
+
+## v0.5 — Realm Operations
+
+Status: **PLANNED**
+
+Planned work:
+
+- [ ] Realm dashboard
+- [ ] Service status
+- [ ] Start / stop / restart worldserver
+- [ ] Authserver status
+- [ ] Port checks
+- [ ] Realm health checks
+- [ ] Realm configuration
+- [ ] Backup integration
+- [ ] Beta-to-production publishing workflow
+
+Production operations must require explicit safeguards.
+
+## v0.6 — Automation and Community Operations
+
+Status: **PLANNED**
+
+Planned work:
+
+- [ ] Event Manager
+- [ ] Discord integration
+- [ ] Broadcast Center
+- [ ] Automated vote rewards
+- [ ] Automated shop delivery
+- [ ] Reward templates
+- [ ] Reward history
+- [ ] Contest tools
+- [ ] Bug report workflow
+- [ ] Suggestion workflow
+
+## Future
+
+Possible later systems:
+
+- Interactive world map
+- Raid progression
+- Arena rankings
+- Character comparison
+- Talent system
+- Achievements
+- Professions
+- Mount collection
+- Pet collection
+- Reputation
+- Spellbook
+- Guild progression
+- Marketplace
+- Transmog viewer
+- Public API
+- Mobile improvements
+
+## Development Principle
+
+Priority order:
+
+**Connect → Inspect → Validate → Edit → Automate**
+
+Build connected systems before adding isolated features.
